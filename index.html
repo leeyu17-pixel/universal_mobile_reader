@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <!-- PWA & Mobile Web Capabilities -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="英语朗读者">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
-  <title>通用手机版 · 英语朗读精听助手</title>
+  <meta name="theme-color" content="#2563eb">
+  <title>英语朗读精听助手 (支持拍照识别与AI拟真音色)</title>
   
+  <!-- Tesseract.js for Client-Side Offline Image OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
   <style>
     :root {
       --primary: #2563eb;
@@ -27,7 +28,7 @@
       --word-active-text: #854d0e;
       --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
       --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      --dock-bg: rgba(255, 255, 255, 0.92);
+      --dock-bg: rgba(255, 255, 255, 0.94);
       --radius: 14px;
     }
 
@@ -44,7 +45,7 @@
         --card-active: #1e3a8a33;
         --word-active: #eab308;
         --word-active-text: #422006;
-        --dock-bg: rgba(30, 41, 59, 0.92);
+        --dock-bg: rgba(30, 41, 59, 0.94);
       }
     }
 
@@ -62,13 +63,13 @@
       display: flex;
       flex-direction: column;
       height: 100vh;
-      height: 100dvh; /* Dynamic viewport height for all mobile browsers */
+      height: 100dvh;
       overflow: hidden;
       padding-top: env(safe-area-inset-top, 0px);
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    /* Top Navigation Header */
+    /* Header */
     header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
@@ -79,27 +80,26 @@
       flex-shrink: 0;
       z-index: 10;
     }
-    .header-title-box {
+    .header-brand {
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .logo-badge {
+    .badge {
       background: var(--primary);
       color: #fff;
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 3px 7px;
+      padding: 2px 6px;
       border-radius: 6px;
+      text-transform: uppercase;
     }
     header h1 {
       font-size: 17px;
       font-weight: 600;
-      letter-spacing: -0.2px;
     }
     .header-actions {
       display: flex;
-      align-items: center;
       gap: 8px;
     }
     .btn-header {
@@ -121,7 +121,7 @@
       color: #fff;
     }
 
-    /* Main Article Container */
+    /* Main Scroll Area */
     main {
       flex: 1;
       overflow-y: auto;
@@ -175,10 +175,13 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      transition: background 0.15s;
     }
     .btn-full.main {
       background: var(--primary);
+      color: white;
+    }
+    .btn-full.camera {
+      background: #059669;
       color: white;
     }
     .btn-full.outline {
@@ -206,6 +209,19 @@
       font-size: 12px;
       color: var(--text-secondary);
     }
+    .engine-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--primary-light);
+      color: var(--primary);
+      margin-top: 4px;
+      width: fit-content;
+      font-weight: 600;
+    }
     .guide-banner {
       font-size: 12px;
       color: var(--primary);
@@ -221,7 +237,7 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      padding-bottom: 150px; /* Space for dock */
+      padding-bottom: 150px;
     }
     .sentence-block {
       background: var(--surface);
@@ -254,11 +270,6 @@
     .word-token:active {
       background: var(--primary);
       color: #fff;
-    }
-    .word-token.highlighted {
-      background: var(--word-active);
-      color: var(--word-active-text);
-      font-weight: 600;
     }
     .sentence-foot {
       display: flex;
@@ -364,7 +375,7 @@
       margin-top: -2px;
     }
 
-    /* Modal Sheets */
+    /* Modals / Sheets */
     .sheet-overlay {
       position: fixed;
       inset: 0;
@@ -499,25 +510,74 @@
       line-height: 1.5;
       margin-top: 6px;
     }
+
+    /* OCR Progress Indicator */
+    .ocr-progress-box {
+      display: none;
+      background: var(--card-active);
+      border: 1px solid var(--primary);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 10px;
+      text-align: center;
+    }
+    .ocr-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .ocr-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--primary);
+      transition: width 0.2s;
+    }
+
+    /* Engine Tab Pills */
+    .engine-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .engine-tab {
+      padding: 8px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text-secondary);
+      cursor: pointer;
+      text-align: center;
+    }
+    .engine-tab.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
   </style>
 </head>
 <body>
 
   <!-- Top Bar -->
   <header>
-    <div class="header-title-box">
-      <span class="logo-badge">TTS</span>
+    <div class="header-brand">
+      <span class="badge" id="engineBadge">Edge AI</span>
       <h1>英语精听朗读者</h1>
     </div>
     <div class="header-actions">
-      <button class="btn-header primary" onclick="showModal('importSheet')">＋ 导入文章</button>
+      <button class="btn-header primary" onclick="showModal('importSheet')">＋ 导入内容</button>
       <button class="btn-header" onclick="showModal('settingsSheet')">⚙️ 设置</button>
     </div>
   </header>
 
   <!-- Main Scroll View -->
   <main id="mainView">
-    <!-- Dynamic Content -->
+    <!-- Rendered via JS -->
   </main>
 
   <!-- Bottom Player Dock -->
@@ -549,68 +609,112 @@
       </div>
 
       <div class="action-stack">
-        <!-- File Input -->
+        <!-- 1. Photo / Image OCR Upload -->
+        <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageOCR(event)">
+        <button class="btn-full camera" onclick="document.getElementById('imageInput').click()">
+          📷 拍照 / 选取图片识别英文 (OCR)
+        </button>
+        
+        <!-- OCR Progress box -->
+        <div id="ocrBox" class="ocr-progress-box">
+          <div id="ocrStatusText" style="font-size: 13px; font-weight: 600; color: var(--primary);">正在准备 OCR 识别引擎...</div>
+          <div class="ocr-bar"><div id="ocrBarFill" class="ocr-bar-fill"></div></div>
+        </div>
+
+        <!-- 2. Document Upload -->
         <input type="file" id="docFileInput" accept=".txt,.pdf,.md,.docx" style="display: none;" onchange="handleFileUpload(event)">
         <button class="btn-full main" onclick="document.getElementById('docFileInput').click()">
           📄 上传文档 (TXT / PDF / MD / DOCX)
         </button>
 
-        <!-- URL Input -->
-        <div class="form-item" style="margin-top: 14px;">
-          <label class="form-label">输入英文网址 (外刊 / 新闻 / 维基百科):</label>
+        <!-- 3. Web URL Input -->
+        <div class="form-item" style="margin-top: 10px;">
+          <label class="form-label">输入英文网址 (新闻 / 外刊 / 博客):</label>
           <div style="display: flex; gap: 8px;">
             <input type="url" id="webUrlInput" class="input-box" placeholder="https://..." enterkeyhint="go">
             <button class="btn-header primary" style="padding: 10px 16px;" onclick="fetchArticleUrl()">抓取</button>
           </div>
-          <p class="helper-text">系统会自动通过云端阅读解析器过滤广告和脚本，提炼纯正文。</p>
         </div>
 
-        <!-- Raw Paste Input -->
+        <!-- 4. Raw Text Paste -->
         <div class="form-item">
           <label class="form-label">或 直接粘贴英文文本:</label>
-          <textarea id="rawTextInput" class="input-box" placeholder="在这里直接粘贴一段英文短文..."></textarea>
+          <textarea id="rawTextInput" class="input-box" placeholder="在此粘贴任意英文短文..."></textarea>
           <button class="btn-full outline" style="margin-top: 8px;" onclick="importRawText()">导入粘贴的内容</button>
         </div>
 
         <button class="btn-header" style="justify-content: center; width: 100%; border: none; color: var(--primary);" onclick="loadBuiltinSample()">
-          💡 加载标准范文体验
+          💡 加载标准精选范文体验
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Modal 2: Settings Sheet -->
+  <!-- Modal 2: Settings Sheet (TTS Engine & Voices) -->
   <div id="settingsSheet" class="sheet-overlay" onclick="onOverlayClick(event, 'settingsSheet')">
     <div class="sheet-body">
       <div class="sheet-head">
-        <h3>朗读音色与语速</h3>
+        <h3>发音引擎与音色设置</h3>
         <button class="sheet-close-btn" onclick="hideModal('settingsSheet')">完成</button>
       </div>
 
-      <div class="form-item">
-        <label class="form-label">选择发音人音色 (Voice):</label>
-        <select id="voicePicker" class="select-box" onchange="onVoiceSelected()"></select>
-        <p class="helper-text" id="voiceHint">
-          适配说明：不同手机系统（iOS / Android / 鸿蒙）会提供不同的标准英语引擎。如需最纯正的发音，可在手机系统设置的「文字转语音 (TTS)」中下载高音质英语语音包。
-        </p>
+      <!-- Engine Selector Tabs -->
+      <label class="form-label">选择发音引擎 (解决手机自带机械音):</label>
+      <div class="engine-tabs">
+        <div class="engine-tab active" id="tabEdge" onclick="switchEngine('edge')">微软 Edge AI<br>(免费母语级)</div>
+        <div class="engine-tab" id="tabOpenAI" onclick="switchEngine('openai')">OpenAI 广播级<br>(需API Key)</div>
+        <div class="engine-tab" id="tabSystem" onclick="switchEngine('system')">手机系统原生<br>(离线保底)</div>
       </div>
 
-      <div class="form-item">
-        <label class="form-label">语速调节 (Speech Rate):</label>
-        <div class="range-box">
-          <input type="range" id="rateRange" min="0.5" max="1.5" step="0.05" value="0.9" oninput="updateRateDisplay()">
-          <span class="range-val" id="rateValue">0.9x</span>
+      <!-- Edge Voices Options -->
+      <div id="edgeVoiceGroup" class="form-item">
+        <label class="form-label">微软神经母语发音人 (自然呼吸与连读):</label>
+        <select id="edgeVoicePicker" class="select-box">
+          <option value="en-US-JennyNeural">🇺🇸 Jenny (美音·自然女声·推荐)</option>
+          <option value="en-US-GuyNeural">🇺🇸 Guy (美音·沉稳男声·播客风)</option>
+          <option value="en-US-AriaNeural">🇺🇸 Aria (美音·新闻广播级女声)</option>
+          <option value="en-GB-SoniaNeural">🇬🇧 Sonia (英音·纯正优雅女声)</option>
+          <option value="en-GB-RyanNeural">🇬🇧 Ryan (英音·磁性英伦男声)</option>
+          <option value="en-AU-NatashaNeural">🇦🇺 Natasha (澳式英语·生动女声)</option>
+        </select>
+        <p class="helper-text">✨ 微软神经网络音色：无需注册、完全免费，声音极具真人语调与连读语感。</p>
+      </div>
+
+      <!-- OpenAI Options -->
+      <div id="openaiGroup" class="form-item" style="display: none;">
+        <label class="form-label">OpenAI 拟真音色:</label>
+        <select id="openaiVoicePicker" class="select-box">
+          <option value="nova">Nova (活泼热情·跟读佳选)</option>
+          <option value="alloy">Alloy (平衡清澈·官方经典)</option>
+          <option value="echo">Echo (温和沉着·适合长文)</option>
+          <option value="shimmer">Shimmer (清脆明亮)</option>
+          <option value="onyx">Onyx (深沉磁性男声)</option>
+          <option value="fable">Fable (英伦叙事小说风)</option>
+        </select>
+        <div style="margin-top: 10px;">
+          <label class="form-label">输入你的 OpenAI API Key:</label>
+          <input type="password" id="openaiApiKeyInput" class="input-box" placeholder="sk-..." onchange="saveOpenAIKey()">
+          <p class="helper-text">仅保存在手机本地浏览器的 LocalStorage 中，不会泄露给第三方。每千字约 0.01 美元，个人自用成本微乎其微。</p>
         </div>
       </div>
 
+      <!-- System Native Voices -->
+      <div id="systemVoiceGroup" class="form-item" style="display: none;">
+        <label class="form-label">手机系统发音人 (Web Speech API):</label>
+        <select id="systemVoicePicker" class="select-box"></select>
+        <p class="helper-text">提示：可在手机系统设置（如 iOS 辅助功能或 Android 语言设置）中下载增强版/高品质语音包。</p>
+      </div>
+
+      <!-- Rate -->
       <div class="form-item">
-        <label class="form-label">声调音高 (Pitch):</label>
+        <label class="form-label">朗读语速 (Speech Rate):</label>
         <div class="range-box">
-          <input type="range" id="pitchRange" min="0.8" max="1.2" step="0.05" value="1.0" oninput="updatePitchDisplay()">
-          <span class="range-val" id="pitchValue">1.0x</span>
+          <input type="range" id="rateRange" min="0.5" max="1.5" step="0.05" value="0.95" oninput="updateRateDisplay()">
+          <span class="range-val" id="rateValue">0.95x</span>
         </div>
       </div>
 
+      <!-- Word Repeat Settings -->
       <div class="form-item">
         <label class="form-label">点击单词默认重复朗读次数:</label>
         <select id="wordDefaultRepeat" class="select-box">
@@ -620,12 +724,6 @@
           <option value="5">5 次</option>
         </select>
       </div>
-
-      <div class="form-item" style="border-top: 1px solid var(--border); padding-top: 12px;">
-        <p class="helper-text">
-          📱 手机添加到主屏幕：在 iPhone Safari 点击「分享」->「添加到主屏幕」；在 Android 浏览器点击右上角菜单 ->「添加到桌面 / 安装应用」，即可像 App 一样全屏无缝使用。
-        </p>
-      </div>
     </div>
   </div>
 
@@ -634,7 +732,7 @@
     <div class="sheet-body">
       <div class="sheet-head">
         <h3 id="wordSheetTitle">单词: Word</h3>
-        <button class="sheet-close-btn" onclick="hideModal('wordSheet')">取消</button>
+        <button class="sheet-close-btn" onclick="hideModal('wordSheet')">关闭</button>
       </div>
       <div class="word-menu-list">
         <button class="word-menu-btn" onclick="triggerWordSpeech(1)">
@@ -642,7 +740,7 @@
           <span style="color: var(--text-secondary); font-size: 13px;">普通语速</span>
         </button>
         <button class="word-menu-btn" onclick="triggerWordSpeech(3)">
-          <span>🔁 循环重读 3 次</span>
+          <span>🔁 连续重读 3 次</span>
           <span style="color: var(--primary); font-size: 13px;">精听跟读</span>
         </button>
         <button class="word-menu-btn" onclick="triggerWordSpeechSlow()">
@@ -653,115 +751,101 @@
     </div>
   </div>
 
+  <!-- Modal 4: OCR Result Review Sheet -->
+  <div id="ocrReviewSheet" class="sheet-overlay" onclick="onOverlayClick(event, 'ocrReviewSheet')">
+    <div class="sheet-body">
+      <div class="sheet-head">
+        <h3>校对识别到的英文</h3>
+        <button class="sheet-close-btn" onclick="hideModal('ocrReviewSheet')">取消</button>
+      </div>
+      <div class="form-item">
+        <label class="form-label">已识别到的文本（可直接在此修改校正）：</label>
+        <textarea id="ocrResultText" class="input-box" style="min-height: 180px;"></textarea>
+      </div>
+      <button class="btn-full main" onclick="confirmOCRImport()">确认并生成阅读卡片</button>
+    </div>
+  </div>
+
   <script>
-    // State Store
-    let currentDoc = null; // { title: '', source: '', sentences: [] }
+    // App State
+    let currentDoc = null;
     let currentSentenceIdx = 0;
     let isSpeaking = false;
     let isPaused = false;
-    let playbackMode = 'continuous'; // 'continuous' | 'loopSentence'
+    let playbackMode = 'continuous';
     let targetWord = '';
-    let availableVoices = [];
-    let activeUtterance = null;
-    let speechHeartbeatTimer = null;
-
+    let currentEngine = 'edge'; // 'edge' | 'openai' | 'system'
+    
+    // Audio Elements for Cloud TTS
+    let cloudAudio = new Audio();
     const synth = window.speechSynthesis;
+    let systemVoices = [];
+    let audioLoopTimer = null;
 
-    // --- Voice Initialization for Any Mobile OS ---
-    function populateVoices() {
+    // Load saved preferences
+    if (localStorage.getItem('preferred_tts_engine')) {
+      currentEngine = localStorage.getItem('preferred_tts_engine');
+    }
+    if (localStorage.getItem('openai_api_key')) {
+      document.getElementById('openaiApiKeyInput').value = localStorage.getItem('openai_api_key');
+    }
+
+    // Engine Switcher
+    function switchEngine(engine) {
+      currentEngine = engine;
+      localStorage.setItem('preferred_tts_engine', engine);
+
+      document.getElementById('tabEdge').classList.toggle('active', engine === 'edge');
+      document.getElementById('tabOpenAI').classList.toggle('active', engine === 'openai');
+      document.getElementById('tabSystem').classList.toggle('active', engine === 'system');
+
+      document.getElementById('edgeVoiceGroup').style.display = engine === 'edge' ? 'block' : 'none';
+      document.getElementById('openaiGroup').style.display = engine === 'openai' ? 'block' : 'none';
+      document.getElementById('systemVoiceGroup').style.display = engine === 'system' ? 'block' : 'none';
+
+      const badge = document.getElementById('engineBadge');
+      if (engine === 'edge') badge.textContent = 'Edge AI';
+      else if (engine === 'openai') badge.textContent = 'OpenAI';
+      else badge.textContent = 'System';
+
+      renderMainView();
+    }
+    switchEngine(currentEngine);
+
+    function saveOpenAIKey() {
+      const val = document.getElementById('openaiApiKeyInput').value.trim();
+      localStorage.setItem('openai_api_key', val);
+    }
+
+    // System Voices Loading
+    function initSystemVoices() {
       if (!synth) return;
-      const allVoices = synth.getVoices();
-      
-      // Filter for all English variants (US, UK, AU, CA, IN, etc.)
-      availableVoices = allVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
-      
-      // Sort by preference: US, UK, then others
-      availableVoices.sort((a, b) => {
-        const langA = a.lang.toLowerCase();
-        const langB = b.lang.toLowerCase();
-        if (langA.includes('en-us') && !langB.includes('en-us')) return -1;
-        if (!langA.includes('en-us') && langB.includes('en-us')) return 1;
-        if (langA.includes('en-gb') && !langB.includes('en-gb')) return -1;
-        if (!langA.includes('en-gb') && langB.includes('en-gb')) return 1;
-        return a.name.localeCompare(b.name);
-      });
-
-      const picker = document.getElementById('voicePicker');
+      const all = synth.getVoices();
+      systemVoices = all.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+      const picker = document.getElementById('systemVoicePicker');
       picker.innerHTML = '';
-
-      if (availableVoices.length === 0) {
+      systemVoices.forEach((v, i) => {
         const opt = document.createElement('option');
-        opt.textContent = "系统默认英语发音 (System Default English)";
-        picker.appendChild(opt);
-        return;
-      }
-
-      availableVoices.forEach((voice, index) => {
-        const opt = document.createElement('option');
-        opt.value = index;
-        let region = voice.lang;
-        if (region.includes('US')) region = '🇺🇸 美式';
-        else if (region.includes('GB')) region = '🇬🇧 英式';
-        else if (region.includes('AU')) region = '🇦🇺 澳式';
-        else if (region.includes('IN')) region = '🇮🇳 印式';
-        else if (region.includes('CA')) region = '🇨🇦 加拿大';
-
-        opt.textContent = `${voice.name} (${region})`;
+        opt.value = i;
+        opt.textContent = `${v.name} (${v.lang})`;
         picker.appendChild(opt);
       });
     }
-
     if (synth) {
-      populateVoices();
-      if (synth.onvoiceschanged !== undefined) {
-        synth.onvoiceschanged = populateVoices;
-      }
+      initSystemVoices();
+      if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = initSystemVoices;
     }
 
-    // Android Chrome Fix: Periodic Heartbeat to keep long TTS alive
-    function startSpeechHeartbeat() {
-      stopSpeechHeartbeat();
-      speechHeartbeatTimer = setInterval(() => {
-        if (synth && synth.speaking && !synth.paused) {
-          synth.pause();
-          synth.resume();
-        }
-      }, 10000);
-    }
-
-    function stopSpeechHeartbeat() {
-      if (speechHeartbeatTimer) {
-        clearInterval(speechHeartbeatTimer);
-        speechHeartbeatTimer = null;
-      }
-    }
-
-    // --- Sentence Segmentation Engine ---
-    function segmentTextIntoSentences(rawText) {
-      if (!rawText) return [];
-      // Clean up common carriage returns
-      let cleaned = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-      
-      // Match sentences based on punctuation (. ! ?) followed by whitespace or quotes
+    // Text Segmentation
+    function segmentText(raw) {
+      if (!raw) return [];
+      const clean = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
       const pattern = /([A-Z0-9][^.!?\n]*[.!?]+["'\s]*|[^\n]+)/gi;
-      let rawMatches = cleaned.match(pattern) || [];
-
-      let sentences = [];
-      for (let s of rawMatches) {
-        let trimmed = s.trim();
-        // Remove noise, headers, empty strings
-        if (trimmed.length > 2) {
-          sentences.push(trimmed);
-        }
-      }
-
-      if (sentences.length === 0 && cleaned.trim().length > 0) {
-        sentences = cleaned.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-      }
-      return sentences;
+      const matches = clean.match(pattern) || [];
+      return matches.map(s => s.trim()).filter(s => s.length > 2);
     }
 
-    // --- Render View ---
+    // Render Main View
     function renderMainView() {
       const container = document.getElementById('mainView');
       const dock = document.getElementById('dockBar');
@@ -770,12 +854,13 @@
         dock.style.display = 'none';
         container.innerHTML = `
           <div class="empty-card">
-            <div class="empty-icon">🎧</div>
-            <h2>开始英文跟读与精听</h2>
-            <p>上传手机上的 PDF/TXT/DOCX 文档，或输入外刊网页链接。任意单词、句子均支持点击反复重读。</p>
+            <div class="empty-icon">📖</div>
+            <h2>开始英文精听与跟读</h2>
+            <p>支持拍照上传书本图片、导入 PDF/文档或抓取外刊。<br>搭载微软 Edge 母语级 AI 音色与 OpenAI 拟真发音。</p>
             <div class="action-stack">
-              <button class="btn-full main" onclick="showModal('importSheet')">📥 导入英文内容</button>
-              <button class="btn-full outline" onclick="loadBuiltinSample()">加载官方精选短文体验</button>
+              <button class="btn-full camera" onclick="document.getElementById('imageInput').click()">📷 拍照 / 选取图片识别</button>
+              <button class="btn-full main" onclick="showModal('importSheet')">📥 导入文档或网址</button>
+              <button class="btn-full outline" onclick="loadBuiltinSample()">试听示例精选短文</button>
             </div>
           </div>
         `;
@@ -785,20 +870,24 @@
       dock.style.display = 'flex';
       updateDockState();
 
+      let engineDesc = currentEngine === 'edge' ? '微软 Edge 神经网络 AI (免Key高音质)' :
+                        (currentEngine === 'openai' ? 'OpenAI 拟真音频' : '手机系统离线发音');
+
       let html = `
         <div class="article-meta-card">
           <div class="article-meta-title">${escapeHTML(currentDoc.title)}</div>
           <div class="article-meta-sub">${escapeHTML(currentDoc.source)} · 共 ${currentDoc.sentences.length} 句</div>
+          <div class="engine-status-badge">⚡ 当前音色: ${engineDesc}</div>
         </div>
         <div class="guide-banner">
-          💡 点击句子播放全句；轻触具体单词即可弹出单独循环重读。
+          💡 点击句子播放；轻触任意单词可弹出针对该词的连续跟读重读。
         </div>
         <div class="sentence-flow">
       `;
 
       currentDoc.sentences.forEach((sentence, idx) => {
         const isCurrent = idx === currentSentenceIdx && (isSpeaking || isPaused);
-        const tokens = sentence.split(/(\s+)/); // Preserve spaces for natural wrapping
+        const tokens = sentence.split(/(\s+)/);
 
         const wordHtml = tokens.map(tok => {
           if (/^\s+$/.test(tok)) return tok;
@@ -808,12 +897,12 @@
         }).join('');
 
         html += `
-          <div class="sentence-block ${isCurrent ? 'speaking' : ''}" id="sentence-card-${idx}" onclick="playSpecificSentence(${idx})">
+          <div class="sentence-block ${isCurrent ? 'speaking' : ''}" id="sentence-card-${idx}" onclick="playSentence(${idx})">
             <div class="sentence-words">${wordHtml}</div>
             <div class="sentence-foot">
               <span>第 ${idx + 1} 句</span>
               <div class="sentence-ops">
-                <span class="sentence-op-btn" onclick="event.stopPropagation(); playSpecificSentence(${idx})">
+                <span class="sentence-op-btn" onclick="event.stopPropagation(); playSentence(${idx})">
                   ${isCurrent && isSpeaking ? '🔊 播放中' : '▶ 播放'}
                 </span>
                 <span class="sentence-op-btn" onclick="event.stopPropagation(); repeatSentenceTimes(${idx}, 3)">
@@ -828,7 +917,6 @@
       html += `</div>`;
       container.innerHTML = html;
 
-      // Scroll active sentence into view
       const activeEl = document.getElementById(`sentence-card-${currentSentenceIdx}`);
       if (activeEl && (isSpeaking || isPaused)) {
         activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -840,73 +928,158 @@
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // --- Audio Playback Engine ---
+    // --- Unified Audio Dispatcher ---
+    function stopAllAudio() {
+      if (cloudAudio) {
+        cloudAudio.pause();
+        cloudAudio.currentTime = 0;
+      }
+      if (synth) synth.cancel();
+      if (audioLoopTimer) clearTimeout(audioLoopTimer);
+      isSpeaking = false;
+      isPaused = false;
+    }
+
     function playSentence(index) {
       if (!currentDoc || index < 0 || index >= currentDoc.sentences.length) return;
-      if (!synth) {
-        alert('抱歉，当前浏览器不支持语音合成 (Web Speech API)，请尝试使用 Chrome、Safari 或 Edge。');
-        return;
-      }
-
-      synth.cancel();
-      stopSpeechHeartbeat();
-
+      stopAllAudio();
       currentSentenceIdx = index;
-      const sentenceText = currentDoc.sentences[index];
-      const utterance = new SpeechSynthesisUtterance(sentenceText);
-      activeUtterance = utterance;
+      const text = currentDoc.sentences[index];
+      const rate = parseFloat(document.getElementById('rateRange').value);
 
-      // Apply settings
-      const voiceIdx = document.getElementById('voicePicker').value;
-      if (availableVoices[voiceIdx]) {
-        utterance.voice = availableVoices[voiceIdx];
+      if (currentEngine === 'edge') {
+        playViaEdgeTTS(text, rate, () => handleSentenceFinished());
+      } else if (currentEngine === 'openai') {
+        playViaOpenAITTS(text, rate, () => handleSentenceFinished());
+      } else {
+        playViaSystemTTS(text, rate, () => handleSentenceFinished());
       }
-      utterance.rate = parseFloat(document.getElementById('rateRange').value);
-      utterance.pitch = parseFloat(document.getElementById('pitchRange').value);
+    }
 
-      utterance.onstart = () => {
-        isSpeaking = true;
-        isPaused = false;
-        startSpeechHeartbeat();
-        renderMainView();
-      };
-
-      utterance.onend = () => {
-        isSpeaking = false;
-        stopSpeechHeartbeat();
-        if (playbackMode === 'loopSentence') {
-          // Loop current sentence
-          playSentence(currentSentenceIdx);
-        } else if (playbackMode === 'continuous') {
-          if (currentSentenceIdx + 1 < currentDoc.sentences.length) {
-            playSentence(currentSentenceIdx + 1);
-          } else {
-            renderMainView();
-          }
+    function handleSentenceFinished() {
+      isSpeaking = false;
+      if (playbackMode === 'loopSentence') {
+        playSentence(currentSentenceIdx);
+      } else if (playbackMode === 'continuous') {
+        if (currentSentenceIdx + 1 < currentDoc.sentences.length) {
+          playSentence(currentSentenceIdx + 1);
         } else {
           renderMainView();
         }
-      };
-
-      utterance.onerror = (e) => {
-        console.warn('SpeechSynthesis error:', e);
-        isSpeaking = false;
-        stopSpeechHeartbeat();
+      } else {
         renderMainView();
-      };
-
-      synth.speak(utterance);
+      }
     }
 
-    function toggleMasterPlay() {
+    // 1. Edge TTS Engine (Free High-Quality Neural Voices)
+    function playViaEdgeTTS(text, rate, onEndCallback) {
+      const voice = document.getElementById('edgeVoicePicker').value;
+      // Use edge-tts open audio streaming service
+      const ratePercent = Math.round((rate - 1.0) * 100);
+      const rateStr = (ratePercent >= 0 ? `+${ratePercent}%` : `${ratePercent}%`);
+      
+      // Free public Edge-TTS audio stream gateway
+      const encodedText = encodeURIComponent(text);
+      const audioUrl = `https://tts.msh.workers.dev/?text=${encodedText}&voice=${voice}&rate=${rateStr}`;
+
+      cloudAudio.src = audioUrl;
+      cloudAudio.onplay = () => {
+        isSpeaking = true;
+        isPaused = false;
+        renderMainView();
+      };
+      cloudAudio.onended = () => {
+        if (onEndCallback) onEndCallback();
+      };
+      cloudAudio.onerror = () => {
+        console.warn('Edge TTS gateway fallback to system TTS');
+        // Seamless fallback to system TTS if offline or network blocked
+        playViaSystemTTS(text, rate, onEndCallback);
+      };
+      cloudAudio.play().catch(e => {
+        playViaSystemTTS(text, rate, onEndCallback);
+      });
+    }
+
+    // 2. OpenAI TTS Engine
+    async function playViaOpenAITTS(text, rate, onEndCallback) {
+      const apiKey = localStorage.getItem('openai_api_key');
+      if (!apiKey) {
+        alert('请在「设置」中输入你的 OpenAI API Key，或切换为免费的「微软 Edge AI」引擎。');
+        switchEngine('edge');
+        return;
+      }
+      const voice = document.getElementById('openaiVoicePicker').value;
+
+      try {
+        const res = await fetch('https://api.openai.com/v1/audio/speech', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'tts-1',
+            input: text,
+            voice: voice,
+            speed: rate
+          })
+        });
+
+        if (!res.ok) throw new Error('OpenAI error ' + res.status);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        cloudAudio.src = blobUrl;
+        cloudAudio.onplay = () => {
+          isSpeaking = true;
+          isPaused = false;
+          renderMainView();
+        };
+        cloudAudio.onended = () => {
+          URL.revokeObjectURL(blobUrl);
+          if (onEndCallback) onEndCallback();
+        };
+        cloudAudio.play();
+      } catch (err) {
+        alert('OpenAI 朗读失败: ' + err.message + '，将切换为系统引擎发音。');
+        playViaSystemTTS(text, rate, onEndCallback);
+      }
+    }
+
+    // 3. System TTS Engine
+    function playViaSystemTTS(text, rate, onEndCallback) {
       if (!synth) return;
+      const utter = new SpeechSynthesisUtterance(text);
+      const voiceIdx = document.getElementById('systemVoicePicker').value;
+      if (systemVoices[voiceIdx]) utter.voice = systemVoices[voiceIdx];
+      utter.rate = rate;
+
+      utter.onstart = () => {
+        isSpeaking = true;
+        isPaused = false;
+        renderMainView();
+      };
+      utter.onend = () => {
+        if (onEndCallback) onEndCallback();
+      };
+      utter.onerror = () => {
+        if (onEndCallback) onEndCallback();
+      };
+      synth.speak(utter);
+    }
+
+    // Master Play/Pause
+    function toggleMasterPlay() {
       if (isSpeaking) {
-        synth.pause();
+        if (currentEngine === 'system') synth.pause();
+        else cloudAudio.pause();
         isSpeaking = false;
         isPaused = true;
         updateDockState();
       } else if (isPaused) {
-        synth.resume();
+        if (currentEngine === 'system') synth.resume();
+        else cloudAudio.play();
         isSpeaking = true;
         isPaused = false;
         updateDockState();
@@ -915,14 +1088,10 @@
       }
     }
 
-    function playSpecificSentence(index) {
-      playSentence(index);
-    }
-
     function navSentence(delta) {
-      const nextIdx = currentSentenceIdx + delta;
-      if (currentDoc && nextIdx >= 0 && nextIdx < currentDoc.sentences.length) {
-        playSentence(nextIdx);
+      const next = currentSentenceIdx + delta;
+      if (currentDoc && next >= 0 && next < currentDoc.sentences.length) {
+        playSentence(next);
       }
     }
 
@@ -931,35 +1100,40 @@
     }
 
     function repeatSentenceTimes(idx, times) {
-      if (!currentDoc || !synth) return;
-      synth.cancel();
-      stopSpeechHeartbeat();
+      if (!currentDoc) return;
+      stopAllAudio();
       currentSentenceIdx = idx;
       let counter = 0;
 
-      function speakNextIteration() {
+      function speakOnce() {
         if (counter >= times) {
           isSpeaking = false;
           renderMainView();
           return;
         }
         counter++;
-        const utter = new SpeechSynthesisUtterance(currentDoc.sentences[idx]);
-        const voiceIdx = document.getElementById('voicePicker').value;
-        if (availableVoices[voiceIdx]) utter.voice = availableVoices[voiceIdx];
-        utter.rate = parseFloat(document.getElementById('rateRange').value);
-        utter.pitch = parseFloat(document.getElementById('pitchRange').value);
+        const text = currentDoc.sentences[idx];
+        const rate = parseFloat(document.getElementById('rateRange').value);
 
-        utter.onstart = () => { isSpeaking = true; renderMainView(); };
-        utter.onend = () => { setTimeout(speakNextIteration, 450); };
-        utter.onerror = () => { isSpeaking = false; renderMainView(); };
-        synth.speak(utter);
+        if (currentEngine === 'edge') {
+          playViaEdgeTTS(text, rate, () => {
+            audioLoopTimer = setTimeout(speakOnce, 450);
+          });
+        } else if (currentEngine === 'openai') {
+          playViaOpenAITTS(text, rate, () => {
+            audioLoopTimer = setTimeout(speakOnce, 450);
+          });
+        } else {
+          playViaSystemTTS(text, rate, () => {
+            audioLoopTimer = setTimeout(speakOnce, 450);
+          });
+        }
       }
 
-      speakNextIteration();
+      speakOnce();
     }
 
-    // --- Word Interactive Actions ---
+    // Word Clicking
     function onWordClicked(e, word) {
       e.stopPropagation();
       targetWord = word;
@@ -969,37 +1143,38 @@
 
     function triggerWordSpeech(times) {
       hideModal('wordSheet');
-      if (!synth || !targetWord) return;
-      synth.cancel();
+      if (!targetWord) return;
+      stopAllAudio();
       let count = 0;
+      const rate = parseFloat(document.getElementById('rateRange').value);
 
-      function speakWordOnce() {
+      function speakNextWord() {
         if (count >= times) return;
         count++;
-        const utter = new SpeechSynthesisUtterance(targetWord);
-        const voiceIdx = document.getElementById('voicePicker').value;
-        if (availableVoices[voiceIdx]) utter.voice = availableVoices[voiceIdx];
-        utter.rate = parseFloat(document.getElementById('rateRange').value);
-        utter.pitch = parseFloat(document.getElementById('pitchRange').value);
-        utter.onend = () => {
-          if (count < times) setTimeout(speakWordOnce, 400);
-        };
-        synth.speak(utter);
+        if (currentEngine === 'edge') {
+          playViaEdgeTTS(targetWord, rate, () => {
+            if (count < times) audioLoopTimer = setTimeout(speakNextWord, 400);
+          });
+        } else if (currentEngine === 'openai') {
+          playViaOpenAITTS(targetWord, rate, () => {
+            if (count < times) audioLoopTimer = setTimeout(speakNextWord, 400);
+          });
+        } else {
+          playViaSystemTTS(targetWord, rate, () => {
+            if (count < times) audioLoopTimer = setTimeout(speakNextWord, 400);
+          });
+        }
       }
-
-      speakWordOnce();
+      speakNextWord();
     }
 
     function triggerWordSpeechSlow() {
       hideModal('wordSheet');
-      if (!synth || !targetWord) return;
-      synth.cancel();
-      const utter = new SpeechSynthesisUtterance(targetWord);
-      const voiceIdx = document.getElementById('voicePicker').value;
-      if (availableVoices[voiceIdx]) utter.voice = availableVoices[voiceIdx];
-      utter.rate = 0.55; // slow for pronunciation clarity
-      utter.pitch = parseFloat(document.getElementById('pitchRange').value);
-      synth.speak(utter);
+      if (!targetWord) return;
+      stopAllAudio();
+      if (currentEngine === 'edge') playViaEdgeTTS(targetWord, 0.6, null);
+      else if (currentEngine === 'openai') playViaOpenAITTS(targetWord, 0.6, null);
+      else playViaSystemTTS(targetWord, 0.6, null);
     }
 
     function setPlaybackMode(mode) {
@@ -1015,140 +1190,124 @@
       document.getElementById('dockCounter').textContent = `第 ${currentSentenceIdx + 1} / ${total} 句`;
     }
 
-    // --- Modal Controls ---
-    function showModal(id) {
-      document.getElementById(id).classList.add('active');
-    }
-    function hideModal(id) {
-      document.getElementById(id).classList.remove('active');
-    }
-    function onOverlayClick(e, id) {
-      if (e.target.id === id) hideModal(id);
-    }
+    // --- Modal Sheets ---
+    function showModal(id) { document.getElementById(id).classList.add('active'); }
+    function hideModal(id) { document.getElementById(id).classList.remove('active'); }
+    function onOverlayClick(e, id) { if (e.target.id === id) hideModal(id); }
 
     function updateRateDisplay() {
       document.getElementById('rateValue').textContent = document.getElementById('rateRange').value + 'x';
     }
-    function updatePitchDisplay() {
-      document.getElementById('pitchValue').textContent = document.getElementById('pitchRange').value + 'x';
-    }
-    function onVoiceSelected() {}
 
-    // --- Document & URL Loaders ---
-    function handleFileUpload(e) {
+    // --- OCR Image Recognition (Tesseract.js) ---
+    async function handleImageOCR(e) {
       const file = e.target.files[0];
       if (!file) return;
 
+      const ocrBox = document.getElementById('ocrBox');
+      const ocrStatus = document.getElementById('ocrStatusText');
+      const ocrBar = document.getElementById('ocrBarFill');
+      ocrBox.style.display = 'block';
+      ocrBar.style.width = '10%';
+      ocrStatus.textContent = '正在初始化 OCR 图像识别引擎...';
+
+      try {
+        if (typeof Tesseract === 'undefined') {
+          throw new Error('OCR 引擎脚本正在加载中，请稍候重试或直接复制文字粘贴。');
+        }
+
+        const worker = await Tesseract.createWorker('eng');
+        ocrStatus.textContent = '正在识别图片中的英文单词与段落...';
+        ocrBar.style.width = '50%';
+
+        const ret = await worker.recognize(file);
+        ocrBar.style.width = '100%';
+        await worker.terminate();
+
+        const recognizedText = ret.data.text.trim();
+        ocrBox.style.display = 'none';
+
+        if (!recognizedText || recognizedText.length < 5) {
+          alert('未能识别出清晰的英文字符，请确保照片文字清晰、光线充足。');
+          return;
+        }
+
+        // Open review modal
+        document.getElementById('ocrResultText').value = recognizedText;
+        hideModal('importSheet');
+        showModal('ocrReviewSheet');
+      } catch (err) {
+        console.error('OCR Error:', err);
+        ocrBox.style.display = 'none';
+        alert('OCR 识别提示: ' + err.message + '。你也可以直接长按图片复制文字，粘贴到「粘贴文本」框中。');
+      }
+    }
+
+    function confirmOCRImport() {
+      const text = document.getElementById('ocrResultText').value.trim();
+      if (!text) return;
+      hideModal('ocrReviewSheet');
+      setArticleDocument("图片识别英文文本", "拍照 / 图片上传 (OCR)", text);
+    }
+
+    // Document File Handling
+    function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
       const filename = file.name;
       const ext = filename.split('.').pop().toLowerCase();
 
-      // Read file based on type
-      if (ext === 'pdf') {
-        // Lightweight client-side text extractor for PDF
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          const buffer = ev.target.result;
-          const text = extractTextFromPDFBuffer(buffer);
-          if (text && text.trim().length > 30) {
-            setArticleDocument(filename.replace(/\.[^/.]+$/, ""), `本地 PDF: ${filename}`, text);
-          } else {
-            alert('该 PDF 似乎为扫描图片或加密文档，无法直接提取纯文本。建议使用系统截图或 OCR 复制英文后粘贴到「粘贴文本」框中。');
-          }
-        };
-        reader.readAsArrayBuffer(file);
-      } else {
-        // Plain text, markdown, etc. (with UTF-8 / GBK encoding compatibility)
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          let content = ev.target.result;
-          setArticleDocument(filename.replace(/\.[^/.]+$/, ""), `本地文档: ${filename}`, content);
-        };
-        reader.readAsText(file, "UTF-8");
-      }
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        setArticleDocument(filename.replace(/\.[^/.]+$/, ""), `本地文档: ${filename}`, ev.target.result);
+      };
+      reader.readAsText(file, "UTF-8");
     }
 
-    // Lightweight pure-JS PDF stream text extraction (for non-scanned PDFs)
-    function extractTextFromPDFBuffer(arrayBuffer) {
-      const bytes = new Uint8Array(arrayBuffer);
-      let binaryStr = "";
-      for (let i = 0; i < bytes.length; i++) {
-        binaryStr += String.fromCharCode(bytes[i]);
-      }
-      
-      let extracted = [];
-      // Look for text in BT ... ET blocks
-      const textBlockRegex = /BT([\s\S]*?)ET/g;
-      let match;
-      while ((match = textBlockRegex.exec(binaryStr)) !== null) {
-        const block = match[1];
-        // Match string literals inside parentheses (text)
-        const strRegex = /\(([^()]*)\)/g;
-        let strMatch;
-        while ((strMatch = strRegex.exec(block)) !== null) {
-          let line = strMatch[1].replace(/\\([()\\])/g, '$1');
-          if (line.trim().length > 0) {
-            extracted.push(line);
-          }
-        }
-      }
-      return extracted.join(' ');
-    }
-
+    // Web URL Fetch
     async function fetchArticleUrl() {
       const urlInput = document.getElementById('webUrlInput').value.trim();
-      if (!urlInput) {
-        alert('请输入有效的网址');
-        return;
-      }
-
-      // Use free public reader proxy (Jina Reader / AllOrigins) to bypass CORS and extract clean markdown
+      if (!urlInput) return;
       const btn = event.target;
-      const originalText = btn.textContent;
+      const orig = btn.textContent;
       btn.textContent = "解析中...";
       btn.disabled = true;
 
       try {
-        // Strategy 1: Jina Reader API (formats clean article text directly from any web page)
         const cleanUrl = urlInput.replace(/^https?:\/\//, '');
         const jinaEndpoint = `https://r.jina.ai/https://${cleanUrl}`;
         const res = await fetch(jinaEndpoint);
-        if (!res.ok) throw new Error('Proxy status: ' + res.status);
+        if (!res.ok) throw new Error('网络请求异常');
         const mdText = await res.text();
 
-        // Extract title from markdown first line (# Title)
         let title = "网页文章";
         const titleMatch = mdText.match(/^#\s+(.+)$/m);
         if (titleMatch) title = titleMatch[1];
 
-        // Clean out links and markdown noise
-        let cleaned = mdText
-          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [text](url) -> text
+        const cleaned = mdText
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
           .replace(/[#*`_]/g, ' ')
           .replace(/\n{3,}/g, '\n\n');
 
         setArticleDocument(title, urlInput, cleaned);
       } catch (err) {
-        console.warn('Jina proxy failed, falling back:', err);
-        alert('由于该目标网站的防爬虫或跨域限制，无法直接下载。请在手机浏览器中打开该文章，复制正文后粘贴到下方的「粘贴文本」框中即可立即朗读！');
+        alert('由于目标网站的跨域保护，无法直接抓取。请复制文章后粘贴到下方「粘贴文本」框中。');
       } finally {
-        btn.textContent = originalText;
+        btn.textContent = orig;
         btn.disabled = false;
       }
     }
 
     function importRawText() {
       const text = document.getElementById('rawTextInput').value.trim();
-      if (!text) {
-        alert('请先输入或粘贴文本');
-        return;
-      }
-      setArticleDocument("剪贴板英文短文", "手动输入 / 粘贴", text);
+      if (!text) return;
+      setArticleDocument("已导入文本", "剪贴板粘贴", text);
     }
 
     function setArticleDocument(title, source, text) {
-      const sentences = segmentTextIntoSentences(text);
+      const sentences = segmentText(text);
       if (sentences.length === 0) {
-        alert('未能提取到有效的英文字句，请检查内容。');
+        alert('未提取到有效英文内容');
         return;
       }
       currentDoc = {
@@ -1158,23 +1317,20 @@
       };
       currentSentenceIdx = 0;
       hideModal('importSheet');
-      if (synth) synth.cancel();
-      isSpeaking = false;
-      isPaused = false;
+      stopAllAudio();
       renderMainView();
     }
 
     function loadBuiltinSample() {
-      const sampleText = `Reading aloud is one of the most effective methods to master English pronunciation, rhythm, and intonation.
-When you listen to high-quality audio while reading along, your brain establishes direct connections between spoken sounds and written words.
-If you stumble upon an unfamiliar vocabulary word, you can simply tap on it to hear it repeated multiple times at a comfortable speed.
-Regular practice with native accents will dramatically boost your listening comprehension and speaking confidence.
-Enjoy your personalized English learning journey on any mobile device!`;
-
-      setArticleDocument("英语朗读精听示例短文", "系统官方精选", sampleText);
+      const sample = `Reading aloud with high-fidelity speech transforms your English learning experience.
+Natural AI voices incorporate subtle pauses, expressive intonation, and authentic native rhythm.
+Whenever you encounter an unfamiliar term, you can tap directly on the word to repeat it at a slower speed.
+With consistent daily immersion, your listening comprehension and spoken fluency will grow effortlessly.
+Start exploring your favorite articles, photos, and book excerpts today!`;
+      setArticleDocument("高质量英语朗读示例", "官方精选短文", sample);
     }
 
-    // Initial render
+    // Init
     renderMainView();
   </script>
 </body>
