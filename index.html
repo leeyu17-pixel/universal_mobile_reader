@@ -3,330 +3,429 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <!-- PWA & Mobile Web Capabilities -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="英语朗读者">
-  <title>英语朗读与精听助手</title>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <title>通用手机版 · 英语朗读精听助手</title>
+  
   <style>
     :root {
-      --primary: #007aff;
-      --bg: #f2f2f7;
-      --card-bg: #ffffff;
-      --text: #1c1c1e;
-      --secondary-text: #8e8e93;
-      --border: #e5e5ea;
-      --highlight: rgba(0, 122, 255, 0.14);
-      --word-highlight: #ffcc00;
+      --primary: #2563eb;
+      --primary-active: #1d4ed8;
+      --primary-light: rgba(37, 99, 235, 0.12);
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --card-active: #eff6ff;
+      --word-active: #fef08a;
+      --word-active-text: #854d0e;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --dock-bg: rgba(255, 255, 255, 0.92);
+      --radius: 14px;
     }
+
     @media (prefers-color-scheme: dark) {
       :root {
-        --primary: #0a84ff;
-        --bg: #000000;
-        --card-bg: #1c1c1e;
-        --text: #f2f2f7;
-        --secondary-text: #8e8e93;
-        --border: #38383a;
-        --highlight: rgba(10, 132, 255, 0.22);
-        --word-highlight: #ffd60a;
+        --primary: #3b82f6;
+        --primary-active: #60a5fa;
+        --primary-light: rgba(59, 130, 246, 0.2);
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --text: #f8fafc;
+        --text-secondary: #94a3b8;
+        --border: #334155;
+        --card-active: #1e3a8a33;
+        --word-active: #eab308;
+        --word-active-text: #422006;
+        --dock-bg: rgba(30, 41, 59, 0.92);
       }
     }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
     }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
       background-color: var(--bg);
       color: var(--text);
       display: flex;
       flex-direction: column;
       height: 100vh;
+      height: 100dvh; /* Dynamic viewport height for all mobile browsers */
       overflow: hidden;
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
-    /* Header */
+
+    /* Top Navigation Header */
     header {
-      background: var(--card-bg);
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
       padding: 12px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
+      z-index: 10;
+    }
+    .header-title-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-badge {
+      background: var(--primary);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 6px;
     }
     header h1 {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 600;
+      letter-spacing: -0.2px;
     }
-    .header-btns {
+    .header-actions {
       display: flex;
-      gap: 12px;
+      align-items: center;
+      gap: 8px;
     }
-    .btn-icon {
-      background: none;
-      border: none;
-      font-size: 15px;
-      color: var(--primary);
+    .btn-header {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 4px;
-      font-weight: 500;
     }
-    /* Main Content */
+    .btn-header.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    /* Main Article Container */
     main {
       flex: 1;
       overflow-y: auto;
       padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
       -webkit-overflow-scrolling: touch;
     }
+
     /* Empty State */
-    .empty-state {
+    .empty-card {
       margin: auto;
       text-align: center;
-      max-width: 360px;
-      padding: 24px;
+      max-width: 380px;
+      padding: 28px 20px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
     }
-    .empty-state .icon {
-      font-size: 54px;
-      margin-bottom: 16px;
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 14px;
     }
-    .empty-state h2 {
-      font-size: 20px;
+    .empty-card h2 {
+      font-size: 19px;
+      font-weight: 600;
       margin-bottom: 8px;
     }
-    .empty-state p {
+    .empty-card p {
       font-size: 14px;
-      color: var(--secondary-text);
+      color: var(--text-secondary);
       line-height: 1.5;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
     }
-    .action-btn-group {
+    .action-stack {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
-    .btn-primary {
+    .btn-full {
+      width: 100%;
+      padding: 13px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s;
+    }
+    .btn-full.main {
       background: var(--primary);
       color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
     }
-    .btn-secondary {
-      background: var(--card-bg);
-      color: var(--primary);
-      border: 1px solid var(--border);
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    /* Article Reader */
-    .article-header {
-      background: var(--card-bg);
-      padding: 16px;
-      border-radius: 12px;
+    .btn-full.outline {
+      background: var(--surface);
+      color: var(--text);
       border: 1px solid var(--border);
     }
-    .article-title {
-      font-size: 20px;
+
+    /* Reading Card List */
+    .article-meta-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .article-meta-title {
+      font-size: 18px;
       font-weight: 700;
-      margin-bottom: 4px;
+      line-height: 1.35;
     }
-    .article-meta {
+    .article-meta-sub {
       font-size: 12px;
-      color: var(--secondary-text);
+      color: var(--text-secondary);
     }
-    .tip-box {
-      font-size: 13px;
-      color: var(--secondary-text);
-      background: var(--card-bg);
+    .guide-banner {
+      font-size: 12px;
+      color: var(--primary);
+      background: var(--primary-light);
       border-radius: 8px;
-      padding: 10px 12px;
-      border-left: 3px solid var(--primary);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .sentence-list {
+
+    .sentence-flow {
       display: flex;
       flex-direction: column;
       gap: 12px;
-      padding-bottom: 140px; /* Space for player */
+      padding-bottom: 150px; /* Space for dock */
     }
-    .sentence-card {
-      background: var(--card-bg);
-      border-radius: 12px;
+    .sentence-block {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
       padding: 14px;
-      border: 1.5px solid transparent;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
     }
-    .sentence-card.active {
+    .sentence-block.speaking {
       border-color: var(--primary);
-      background: var(--highlight);
+      background: var(--card-active);
+      box-shadow: 0 0 0 1px var(--primary);
     }
-    .sentence-text {
+    .sentence-words {
       font-size: 18px;
-      line-height: 1.6;
+      line-height: 1.65;
       display: flex;
       flex-wrap: wrap;
       gap: 4px 6px;
-      margin-bottom: 10px;
     }
-    .word-span {
-      padding: 2px 4px;
+    .word-token {
+      display: inline-block;
+      padding: 1px 4px;
       border-radius: 4px;
       cursor: pointer;
       user-select: none;
-      transition: background 0.15s;
+      transition: background 0.1s;
     }
-    .word-span:active {
+    .word-token:active {
       background: var(--primary);
-      color: white;
+      color: #fff;
     }
-    .sentence-bar {
+    .word-token.highlighted {
+      background: var(--word-active);
+      color: var(--word-active-text);
+      font-weight: 600;
+    }
+    .sentence-foot {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 12px;
-      color: var(--secondary-text);
-      border-top: 1px dashed var(--border);
+      margin-top: 10px;
       padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      font-size: 12px;
+      color: var(--text-secondary);
     }
-    .sentence-bar .actions {
+    .sentence-ops {
       display: flex;
       gap: 12px;
     }
-    .sentence-bar .action-link {
+    .sentence-op-btn {
       color: var(--primary);
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
+      padding: 2px 4px;
     }
-    /* Bottom Player */
-    .player-dock {
+
+    /* Fixed Bottom Player Dock */
+    .dock {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      background: rgba(255, 255, 255, 0.88);
+      background: var(--dock-bg);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-top: 1px solid var(--border);
-      padding: 12px 16px;
-      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      padding: 10px 16px;
+      padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       z-index: 100;
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
     }
-    @media (prefers-color-scheme: dark) {
-      .player-dock {
-        background: rgba(28, 28, 30, 0.88);
-      }
-    }
-    .player-info-row {
+    .dock-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 13px;
-      color: var(--secondary-text);
+      font-size: 12px;
+      color: var(--text-secondary);
     }
-    .mode-pills {
+    .mode-switch {
       display: flex;
-      background: rgba(120, 120, 128, 0.16);
+      background: var(--bg);
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 2px;
     }
-    .mode-pill {
+    .mode-btn {
       border: none;
       background: none;
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 6px;
       font-size: 12px;
       font-weight: 500;
-      color: var(--text);
+      color: var(--text-secondary);
       cursor: pointer;
     }
-    .mode-pill.active {
-      background: var(--card-bg);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    .mode-btn.active {
+      background: var(--surface);
       color: var(--primary);
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
     }
-    .player-btns {
+    .dock-controls {
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 28px;
     }
-    .ctrl-btn {
+    .dock-btn {
       background: none;
       border: none;
-      font-size: 24px;
+      font-size: 22px;
       color: var(--text);
       cursor: pointer;
-    }
-    .ctrl-btn-play {
-      width: 56px;
-      height: 56px;
-      border-radius: 28px;
-      background: var(--primary);
-      color: white;
-      font-size: 26px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      min-width: 44px;
+      min-height: 44px;
     }
-    /* Modals / Sheets */
-    .modal-overlay {
+    .dock-btn.play {
+      width: 54px;
+      height: 54px;
+      border-radius: 27px;
+      background: var(--primary);
+      color: white;
+      font-size: 24px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+    .dock-btn.repeat-sub {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-top: -2px;
+    }
+
+    /* Modal Sheets */
+    .sheet-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
       display: none;
       align-items: flex-end;
       z-index: 200;
+      opacity: 0;
+      transition: opacity 0.2s ease;
     }
-    .modal-overlay.show {
+    .sheet-overlay.active {
       display: flex;
+      opacity: 1;
     }
-    .sheet-card {
-      background: var(--card-bg);
+    .sheet-body {
+      background: var(--surface);
       width: 100%;
       border-radius: 20px 20px 0 0;
-      padding: 20px 16px;
+      padding: 20px 18px;
       max-height: 85vh;
+      max-height: 85dvh;
       overflow-y: auto;
-      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+      transform: translateY(100%);
+      transition: transform 0.25s cubic-bezier(0.33, 1, 0.68, 1);
     }
-    .sheet-header {
+    .sheet-overlay.active .sheet-body {
+      transform: translateY(0);
+    }
+    .sheet-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
-    .sheet-header h3 {
+    .sheet-head h3 {
       font-size: 18px;
       font-weight: 600;
     }
-    .form-group {
-      margin-bottom: 18px;
+    .sheet-close-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
     }
-    .form-group label {
+    .form-item {
+      margin-bottom: 16px;
+    }
+    .form-label {
       display: block;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--secondary-text);
-      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
     }
-    .form-control {
+    .input-box {
       width: 100%;
       padding: 12px;
       border-radius: 10px;
@@ -334,233 +433,349 @@
       background: var(--bg);
       color: var(--text);
       font-size: 15px;
+      outline: none;
     }
-    textarea.form-control {
+    .input-box:focus {
+      border-color: var(--primary);
+    }
+    textarea.input-box {
+      min-height: 110px;
       resize: vertical;
-      min-height: 120px;
+      font-family: inherit;
     }
-    .slider-row {
+    .range-box {
       display: flex;
       align-items: center;
       gap: 12px;
     }
-    .slider-row input[type="range"] {
+    .range-box input[type="range"] {
       flex: 1;
+      accent-color: var(--primary);
     }
-    .slider-val {
+    .range-val {
+      font-size: 14px;
       font-weight: 600;
       color: var(--primary);
-      min-width: 50px;
+      min-width: 48px;
       text-align: right;
     }
-    /* Word Action Sheet */
-    .word-actions {
+    .select-box {
+      width: 100%;
+      padding: 11px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+    .word-menu-list {
       display: flex;
       flex-direction: column;
       gap: 10px;
-      margin-top: 14px;
+      margin-top: 8px;
     }
-    .word-action-btn {
-      padding: 14px;
+    .word-menu-btn {
+      padding: 14px 16px;
       border-radius: 12px;
       border: 1px solid var(--border);
       background: var(--bg);
       color: var(--text);
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 500;
       cursor: pointer;
       text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .word-menu-btn:active {
+      background: var(--card-active);
+      border-color: var(--primary);
+    }
+    .helper-text {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-top: 6px;
     }
   </style>
 </head>
 <body>
 
+  <!-- Top Bar -->
   <header>
-    <h1>英语朗读者</h1>
-    <div class="header-btns">
-      <button class="btn-icon" onclick="openImportModal()">＋ 导入内容</button>
-      <button class="btn-icon" onclick="openSettingsModal()">⚙️ 设置</button>
+    <div class="header-title-box">
+      <span class="logo-badge">TTS</span>
+      <h1>英语精听朗读者</h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn-header primary" onclick="showModal('importSheet')">＋ 导入文章</button>
+      <button class="btn-header" onclick="showModal('settingsSheet')">⚙️ 设置</button>
     </div>
   </header>
 
-  <main id="mainContainer">
-    <!-- Rendered via JS -->
+  <!-- Main Scroll View -->
+  <main id="mainView">
+    <!-- Dynamic Content -->
   </main>
 
-  <div id="playerDock" class="player-dock" style="display: none;">
-    <div class="player-info-row">
-      <span id="playerProgress">第 1 / 1 句</span>
-      <div class="mode-pills">
-        <button class="mode-pill active" id="modeContinuous" onclick="setMode('continuous')">连续</button>
-        <button class="mode-pill" id="modeRepeatSentence" onclick="setMode('repeatSentence')">单句循环</button>
+  <!-- Bottom Player Dock -->
+  <div id="dockBar" class="dock" style="display: none;">
+    <div class="dock-top">
+      <span id="dockCounter">第 1 / 1 句</span>
+      <div class="mode-switch">
+        <button class="mode-btn active" id="btnModeCont" onclick="setPlaybackMode('continuous')">连续播放</button>
+        <button class="mode-btn" id="btnModeLoop" onclick="setPlaybackMode('loopSentence')">单句循环</button>
       </div>
     </div>
-    <div class="player-btns">
-      <button class="ctrl-btn" onclick="prevSentence()">⏮</button>
-      <button class="ctrl-btn ctrl-btn-play" id="btnPlayPause" onclick="togglePlayPause()">▶</button>
-      <button class="ctrl-btn" onclick="nextSentence()">⏭</button>
-      <button class="ctrl-btn" onclick="repeatCurrentSentence(3)" title="重复3次">🔁</button>
+    <div class="dock-controls">
+      <button class="dock-btn" onclick="navSentence(-1)" title="上一句">⏮</button>
+      <button class="dock-btn play" id="btnPlayMaster" onclick="toggleMasterPlay()">▶</button>
+      <button class="dock-btn" onclick="navSentence(1)" title="下一句">⏭</button>
+      <button class="dock-btn" onclick="repeatCurrentSentence(3)" title="重复3次">
+        <span>🔁</span>
+        <span class="dock-btn repeat-sub">3次</span>
+      </button>
     </div>
   </div>
 
-  <!-- Import Modal -->
-  <div id="importModal" class="modal-overlay" onclick="closeModalsOnOverlay(event)">
-    <div class="sheet-card">
-      <div class="sheet-header">
+  <!-- Modal 1: Import Content Sheet -->
+  <div id="importSheet" class="sheet-overlay" onclick="onOverlayClick(event, 'importSheet')">
+    <div class="sheet-body">
+      <div class="sheet-head">
         <h3>导入阅读内容</h3>
-        <button class="btn-icon" onclick="closeModals()">关闭</button>
+        <button class="sheet-close-btn" onclick="hideModal('importSheet')">关闭</button>
       </div>
-      <div class="action-btn-group">
-        <input type="file" id="fileInput" accept=".txt,.pdf,.md" style="display: none;" onchange="handleFile(event)">
-        <button class="btn-primary" onclick="document.getElementById('fileInput').click()">📄 上传文档 (TXT / PDF / MD)</button>
-        
-        <div class="form-group" style="margin-top: 14px;">
-          <label>或 输入外刊 / 网页网址 (URL):</label>
+
+      <div class="action-stack">
+        <!-- File Input -->
+        <input type="file" id="docFileInput" accept=".txt,.pdf,.md,.docx" style="display: none;" onchange="handleFileUpload(event)">
+        <button class="btn-full main" onclick="document.getElementById('docFileInput').click()">
+          📄 上传文档 (TXT / PDF / MD / DOCX)
+        </button>
+
+        <!-- URL Input -->
+        <div class="form-item" style="margin-top: 14px;">
+          <label class="form-label">输入英文网址 (外刊 / 新闻 / 维基百科):</label>
           <div style="display: flex; gap: 8px;">
-            <input type="url" id="urlInput" class="form-control" placeholder="https://...">
-            <button class="btn-primary" style="padding: 10px 18px;" onclick="loadUrl()">抓取</button>
+            <input type="url" id="webUrlInput" class="input-box" placeholder="https://..." enterkeyhint="go">
+            <button class="btn-header primary" style="padding: 10px 16px;" onclick="fetchArticleUrl()">抓取</button>
           </div>
+          <p class="helper-text">系统会自动通过云端阅读解析器过滤广告和脚本，提炼纯正文。</p>
         </div>
 
-        <div class="form-group">
-          <label>或 直接粘贴英文文本:</label>
-          <textarea id="pasteInput" class="form-control" placeholder="在此粘贴英文短文..."></textarea>
-          <button class="btn-secondary" style="margin-top: 8px; width: 100%;" onclick="loadPastedText()">导入粘贴的文本</button>
+        <!-- Raw Paste Input -->
+        <div class="form-item">
+          <label class="form-label">或 直接粘贴英文文本:</label>
+          <textarea id="rawTextInput" class="input-box" placeholder="在这里直接粘贴一段英文短文..."></textarea>
+          <button class="btn-full outline" style="margin-top: 8px;" onclick="importRawText()">导入粘贴的内容</button>
         </div>
 
-        <button class="btn-icon" style="justify-content: center; margin-top: 8px;" onclick="loadDemoText()">加载官方示例文章试听</button>
+        <button class="btn-header" style="justify-content: center; width: 100%; border: none; color: var(--primary);" onclick="loadBuiltinSample()">
+          💡 加载标准范文体验
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Settings Modal -->
-  <div id="settingsModal" class="modal-overlay" onclick="closeModalsOnOverlay(event)">
-    <div class="sheet-card">
-      <div class="sheet-header">
-        <h3>朗读与发音设置</h3>
-        <button class="btn-icon" onclick="closeModals()">完成</button>
+  <!-- Modal 2: Settings Sheet -->
+  <div id="settingsSheet" class="sheet-overlay" onclick="onOverlayClick(event, 'settingsSheet')">
+    <div class="sheet-body">
+      <div class="sheet-head">
+        <h3>朗读音色与语速</h3>
+        <button class="sheet-close-btn" onclick="hideModal('settingsSheet')">完成</button>
       </div>
 
-      <div class="form-group">
-        <label>选择发音人音色 (Voice):</label>
-        <select id="voiceSelect" class="form-control" onchange="onVoiceChange()"></select>
-        <p style="font-size: 12px; color: var(--secondary-text); margin-top: 6px;">
-          💡 提示：在 iPhone「设置 -> 辅助功能 -> 朗读内容 -> 声音」中可免费下载高品质（Enhanced / Premium）英语语音包，效果极佳。
+      <div class="form-item">
+        <label class="form-label">选择发音人音色 (Voice):</label>
+        <select id="voicePicker" class="select-box" onchange="onVoiceSelected()"></select>
+        <p class="helper-text" id="voiceHint">
+          适配说明：不同手机系统（iOS / Android / 鸿蒙）会提供不同的标准英语引擎。如需最纯正的发音，可在手机系统设置的「文字转语音 (TTS)」中下载高音质英语语音包。
         </p>
       </div>
 
-      <div class="form-group">
-        <label>朗读语速 (Speech Rate):</label>
-        <div class="slider-row">
-          <input type="range" id="rateSlider" min="0.5" max="1.5" step="0.05" value="0.9" oninput="updateRateLabel()">
-          <span class="slider-val" id="rateLabel">0.9x</span>
+      <div class="form-item">
+        <label class="form-label">语速调节 (Speech Rate):</label>
+        <div class="range-box">
+          <input type="range" id="rateRange" min="0.5" max="1.5" step="0.05" value="0.9" oninput="updateRateDisplay()">
+          <span class="range-val" id="rateValue">0.9x</span>
         </div>
       </div>
 
-      <div class="form-group">
-        <label>声调音高 (Pitch):</label>
-        <div class="slider-row">
-          <input type="range" id="pitchSlider" min="0.75" max="1.25" step="0.05" value="1.0" oninput="updatePitchLabel()">
-          <span class="slider-val" id="pitchLabel">1.0x</span>
+      <div class="form-item">
+        <label class="form-label">声调音高 (Pitch):</label>
+        <div class="range-box">
+          <input type="range" id="pitchRange" min="0.8" max="1.2" step="0.05" value="1.0" oninput="updatePitchDisplay()">
+          <span class="range-val" id="pitchValue">1.0x</span>
         </div>
       </div>
 
-      <div class="form-group">
-        <label>点击单词默认重复朗读次数:</label>
-        <select id="wordRepeatTimes" class="form-control">
+      <div class="form-item">
+        <label class="form-label">点击单词默认重复朗读次数:</label>
+        <select id="wordDefaultRepeat" class="select-box">
           <option value="1">1 次</option>
           <option value="2">2 次</option>
-          <option value="3" selected>3 次 (推荐精听)</option>
+          <option value="3" selected>3 次 (推荐精听磨耳朵)</option>
           <option value="5">5 次</option>
         </select>
+      </div>
+
+      <div class="form-item" style="border-top: 1px solid var(--border); padding-top: 12px;">
+        <p class="helper-text">
+          📱 手机添加到主屏幕：在 iPhone Safari 点击「分享」->「添加到主屏幕」；在 Android 浏览器点击右上角菜单 ->「添加到桌面 / 安装应用」，即可像 App 一样全屏无缝使用。
+        </p>
       </div>
     </div>
   </div>
 
-  <!-- Word Action Modal -->
-  <div id="wordModal" class="modal-overlay" onclick="closeModalsOnOverlay(event)">
-    <div class="sheet-card">
-      <div class="sheet-header">
-        <h3 id="wordModalTitle">单词操作</h3>
-        <button class="btn-icon" onclick="closeModals()">取消</button>
+  <!-- Modal 3: Word Repeat Sheet -->
+  <div id="wordSheet" class="sheet-overlay" onclick="onOverlayClick(event, 'wordSheet')">
+    <div class="sheet-body">
+      <div class="sheet-head">
+        <h3 id="wordSheetTitle">单词: Word</h3>
+        <button class="sheet-close-btn" onclick="hideModal('wordSheet')">取消</button>
       </div>
-      <div class="word-actions">
-        <button class="word-action-btn" onclick="executeWordRepeat(1)">🔊 朗读 1 次</button>
-        <button class="word-action-btn" onclick="executeWordRepeat(3)">🔁 重复朗读 3 次</button>
-        <button class="word-action-btn" onclick="executeWordRepeatSlow()">🐢 慢速发音 (0.6x) 重读</button>
+      <div class="word-menu-list">
+        <button class="word-menu-btn" onclick="triggerWordSpeech(1)">
+          <span>🔊 标准朗读 1 次</span>
+          <span style="color: var(--text-secondary); font-size: 13px;">普通语速</span>
+        </button>
+        <button class="word-menu-btn" onclick="triggerWordSpeech(3)">
+          <span>🔁 循环重读 3 次</span>
+          <span style="color: var(--primary); font-size: 13px;">精听跟读</span>
+        </button>
+        <button class="word-menu-btn" onclick="triggerWordSpeechSlow()">
+          <span>🐢 慢速发音 (0.6x)</span>
+          <span style="color: var(--text-secondary); font-size: 13px;">清晰音节</span>
+        </button>
       </div>
     </div>
   </div>
 
   <script>
-    // State
-    let article = null; // { title, source, sentences: [] }
-    let currentIndex = 0;
+    // State Store
+    let currentDoc = null; // { title: '', source: '', sentences: [] }
+    let currentSentenceIdx = 0;
     let isSpeaking = false;
     let isPaused = false;
-    let playbackMode = 'continuous'; // 'continuous' | 'repeatSentence'
-    let selectedWord = '';
-    let englishVoices = [];
+    let playbackMode = 'continuous'; // 'continuous' | 'loopSentence'
+    let targetWord = '';
+    let availableVoices = [];
+    let activeUtterance = null;
+    let speechHeartbeatTimer = null;
 
-    // Synthesizer
     const synth = window.speechSynthesis;
 
-    function initVoices() {
+    // --- Voice Initialization for Any Mobile OS ---
+    function populateVoices() {
       if (!synth) return;
-      const voices = synth.getVoices();
-      englishVoices = voices.filter(v => v.lang.startsWith('en'));
+      const allVoices = synth.getVoices();
       
-      const select = document.getElementById('voiceSelect');
-      select.innerHTML = '';
+      // Filter for all English variants (US, UK, AU, CA, IN, etc.)
+      availableVoices = allVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+      
+      // Sort by preference: US, UK, then others
+      availableVoices.sort((a, b) => {
+        const langA = a.lang.toLowerCase();
+        const langB = b.lang.toLowerCase();
+        if (langA.includes('en-us') && !langB.includes('en-us')) return -1;
+        if (!langA.includes('en-us') && langB.includes('en-us')) return 1;
+        if (langA.includes('en-gb') && !langB.includes('en-gb')) return -1;
+        if (!langA.includes('en-gb') && langB.includes('en-gb')) return 1;
+        return a.name.localeCompare(b.name);
+      });
 
-      if (englishVoices.length === 0) {
+      const picker = document.getElementById('voicePicker');
+      picker.innerHTML = '';
+
+      if (availableVoices.length === 0) {
         const opt = document.createElement('option');
-        opt.textContent = "默认英语发音 (Default English)";
-        select.appendChild(opt);
+        opt.textContent = "系统默认英语发音 (System Default English)";
+        picker.appendChild(opt);
         return;
       }
 
-      englishVoices.forEach((voice, index) => {
+      availableVoices.forEach((voice, index) => {
         const opt = document.createElement('option');
         opt.value = index;
-        let label = voice.name;
-        if (voice.lang === 'en-US') label += ' (🇺🇸 美式)';
-        else if (voice.lang === 'en-GB') label += ' (🇬🇧 英式)';
-        else if (voice.lang === 'en-AU') label += ' (🇦🇺 澳式)';
-        opt.textContent = label;
-        select.appendChild(opt);
+        let region = voice.lang;
+        if (region.includes('US')) region = '🇺🇸 美式';
+        else if (region.includes('GB')) region = '🇬🇧 英式';
+        else if (region.includes('AU')) region = '🇦🇺 澳式';
+        else if (region.includes('IN')) region = '🇮🇳 印式';
+        else if (region.includes('CA')) region = '🇨🇦 加拿大';
+
+        opt.textContent = `${voice.name} (${region})`;
+        picker.appendChild(opt);
       });
     }
 
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = initVoices;
-    }
-    initVoices();
-
-    // Sentence splitting
-    function splitSentences(text) {
-      // Split by sentence terminators keeping punctuation
-      const regex = /([^.!?\n]+[.!?]+|[^
-]+)/g;
-      const matches = text.match(regex) || [];
-      return matches.map(s => s.trim()).filter(s => s.length > 2);
+    if (synth) {
+      populateVoices();
+      if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = populateVoices;
+      }
     }
 
-    // Render UI
-    function render() {
-      const container = document.getElementById('mainContainer');
-      const dock = document.getElementById('playerDock');
+    // Android Chrome Fix: Periodic Heartbeat to keep long TTS alive
+    function startSpeechHeartbeat() {
+      stopSpeechHeartbeat();
+      speechHeartbeatTimer = setInterval(() => {
+        if (synth && synth.speaking && !synth.paused) {
+          synth.pause();
+          synth.resume();
+        }
+      }, 10000);
+    }
 
-      if (!article || article.sentences.length === 0) {
+    function stopSpeechHeartbeat() {
+      if (speechHeartbeatTimer) {
+        clearInterval(speechHeartbeatTimer);
+        speechHeartbeatTimer = null;
+      }
+    }
+
+    // --- Sentence Segmentation Engine ---
+    function segmentTextIntoSentences(rawText) {
+      if (!rawText) return [];
+      // Clean up common carriage returns
+      let cleaned = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      
+      // Match sentences based on punctuation (. ! ?) followed by whitespace or quotes
+      const pattern = /([A-Z0-9][^.!?\n]*[.!?]+["'\s]*|[^\n]+)/gi;
+      let rawMatches = cleaned.match(pattern) || [];
+
+      let sentences = [];
+      for (let s of rawMatches) {
+        let trimmed = s.trim();
+        // Remove noise, headers, empty strings
+        if (trimmed.length > 2) {
+          sentences.push(trimmed);
+        }
+      }
+
+      if (sentences.length === 0 && cleaned.trim().length > 0) {
+        sentences = cleaned.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      }
+      return sentences;
+    }
+
+    // --- Render View ---
+    function renderMainView() {
+      const container = document.getElementById('mainView');
+      const dock = document.getElementById('dockBar');
+
+      if (!currentDoc || currentDoc.sentences.length === 0) {
         dock.style.display = 'none';
         container.innerHTML = `
-          <div class="empty-state">
-            <div class="icon">🎧</div>
-            <h2>开始英语跟读与精听</h2>
-            <p>上传本地 PDF/TXT 文档，或粘贴外刊网址与文章。<br>点击任意句子或单词，可随时精准重复发音。</p>
-            <div class="action-btn-group">
-              <button class="btn-primary" onclick="openImportModal()">📥 导入文章内容</button>
-              <button class="btn-secondary" onclick="loadDemoText()">加载官方示例文章试听</button>
+          <div class="empty-card">
+            <div class="empty-icon">🎧</div>
+            <h2>开始英文跟读与精听</h2>
+            <p>上传手机上的 PDF/TXT/DOCX 文档，或输入外刊网页链接。任意单词、句子均支持点击反复重读。</p>
+            <div class="action-stack">
+              <button class="btn-full main" onclick="showModal('importSheet')">📥 导入英文内容</button>
+              <button class="btn-full outline" onclick="loadBuiltinSample()">加载官方精选短文体验</button>
             </div>
           </div>
         `;
@@ -568,32 +783,42 @@
       }
 
       dock.style.display = 'flex';
-      updatePlayerDock();
+      updateDockState();
 
       let html = `
-        <div class="article-header">
-          <div class="article-title">${escapeHtml(article.title)}</div>
-          <div class="article-meta">${escapeHtml(article.source)} · 共 ${article.sentences.length} 句</div>
+        <div class="article-meta-card">
+          <div class="article-meta-title">${escapeHTML(currentDoc.title)}</div>
+          <div class="article-meta-sub">${escapeHTML(currentDoc.source)} · 共 ${currentDoc.sentences.length} 句</div>
         </div>
-        <div class="tip-box">
-          💡 点击任意句子立即朗读；轻触某个单词可弹出单独重读。
+        <div class="guide-banner">
+          💡 点击句子播放全句；轻触具体单词即可弹出单独循环重读。
         </div>
-        <div class="sentence-list">
+        <div class="sentence-flow">
       `;
 
-      article.sentences.forEach((sentence, idx) => {
-        const isActive = idx === currentIndex && (isSpeaking || isPaused);
-        const words = sentence.split(/\s+/);
-        const wordSpans = words.map(w => `<span class="word-span" onclick="onWordClick(event, '${escapeHtml(w)}')">${escapeHtml(w)}</span>`).join(' ');
+      currentDoc.sentences.forEach((sentence, idx) => {
+        const isCurrent = idx === currentSentenceIdx && (isSpeaking || isPaused);
+        const tokens = sentence.split(/(\s+)/); // Preserve spaces for natural wrapping
+
+        const wordHtml = tokens.map(tok => {
+          if (/^\s+$/.test(tok)) return tok;
+          const cleanWord = tok.replace(/[^a-zA-Z0-9'-]/g, '');
+          if (!cleanWord) return escapeHTML(tok);
+          return `<span class="word-token" onclick="onWordClicked(event, '${escapeHTML(cleanWord)}')">${escapeHTML(tok)}</span>`;
+        }).join('');
 
         html += `
-          <div class="sentence-card ${isActive ? 'active' : ''}" id="sentence-${idx}" onclick="onSentenceClick(${idx})">
-            <div class="sentence-text">${wordSpans}</div>
-            <div class="sentence-bar">
+          <div class="sentence-block ${isCurrent ? 'speaking' : ''}" id="sentence-card-${idx}" onclick="playSpecificSentence(${idx})">
+            <div class="sentence-words">${wordHtml}</div>
+            <div class="sentence-foot">
               <span>第 ${idx + 1} 句</span>
-              <div class="actions">
-                <span class="action-link" onclick="event.stopPropagation(); playSentence(${idx})">${isActive && isSpeaking ? '🔊 播放中' : '▶ 播放本句'}</span>
-                <span class="action-link" onclick="event.stopPropagation(); repeatSentenceTimes(${idx}, 3)">🔁 重读3次</span>
+              <div class="sentence-ops">
+                <span class="sentence-op-btn" onclick="event.stopPropagation(); playSpecificSentence(${idx})">
+                  ${isCurrent && isSpeaking ? '🔊 播放中' : '▶ 播放'}
+                </span>
+                <span class="sentence-op-btn" onclick="event.stopPropagation(); repeatSentenceTimes(${idx}, 3)">
+                  🔁 重读3次
+                </span>
               </div>
             </div>
           </div>
@@ -603,148 +828,159 @@
       html += `</div>`;
       container.innerHTML = html;
 
-      // Scroll active into view
-      const activeEl = document.getElementById(`sentence-${currentIndex}`);
+      // Scroll active sentence into view
+      const activeEl = document.getElementById(`sentence-card-${currentSentenceIdx}`);
       if (activeEl && (isSpeaking || isPaused)) {
         activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
 
-    function escapeHtml(text) {
-      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // Playback Logic
+    // --- Audio Playback Engine ---
     function playSentence(index) {
-      if (!article || index < 0 || index >= article.sentences.length) return;
-      synth.cancel();
-
-      currentIndex = index;
-      const text = article.sentences[index];
-      const utter = new SpeechSynthesisUtterance(text);
-
-      // Voice
-      const voiceIdx = document.getElementById('voiceSelect').value;
-      if (englishVoices[voiceIdx]) {
-        utter.voice = englishVoices[voiceIdx];
+      if (!currentDoc || index < 0 || index >= currentDoc.sentences.length) return;
+      if (!synth) {
+        alert('抱歉，当前浏览器不支持语音合成 (Web Speech API)，请尝试使用 Chrome、Safari 或 Edge。');
+        return;
       }
-      utter.rate = parseFloat(document.getElementById('rateSlider').value);
-      utter.pitch = parseFloat(document.getElementById('pitchSlider').value);
 
-      utter.onstart = () => {
+      synth.cancel();
+      stopSpeechHeartbeat();
+
+      currentSentenceIdx = index;
+      const sentenceText = currentDoc.sentences[index];
+      const utterance = new SpeechSynthesisUtterance(sentenceText);
+      activeUtterance = utterance;
+
+      // Apply settings
+      const voiceIdx = document.getElementById('voicePicker').value;
+      if (availableVoices[voiceIdx]) {
+        utterance.voice = availableVoices[voiceIdx];
+      }
+      utterance.rate = parseFloat(document.getElementById('rateRange').value);
+      utterance.pitch = parseFloat(document.getElementById('pitchRange').value);
+
+      utterance.onstart = () => {
         isSpeaking = true;
         isPaused = false;
-        render();
+        startSpeechHeartbeat();
+        renderMainView();
       };
 
-      utter.onend = () => {
+      utterance.onend = () => {
         isSpeaking = false;
-        if (playbackMode === 'repeatSentence') {
-          playSentence(currentIndex);
+        stopSpeechHeartbeat();
+        if (playbackMode === 'loopSentence') {
+          // Loop current sentence
+          playSentence(currentSentenceIdx);
         } else if (playbackMode === 'continuous') {
-          if (currentIndex + 1 < article.sentences.length) {
-            playSentence(currentIndex + 1);
+          if (currentSentenceIdx + 1 < currentDoc.sentences.length) {
+            playSentence(currentSentenceIdx + 1);
           } else {
-            render();
+            renderMainView();
           }
         } else {
-          render();
+          renderMainView();
         }
       };
 
-      utter.onerror = () => {
+      utterance.onerror = (e) => {
+        console.warn('SpeechSynthesis error:', e);
         isSpeaking = false;
-        render();
+        stopSpeechHeartbeat();
+        renderMainView();
       };
 
-      synth.speak(utter);
+      synth.speak(utterance);
     }
 
-    function togglePlayPause() {
+    function toggleMasterPlay() {
+      if (!synth) return;
       if (isSpeaking) {
         synth.pause();
         isSpeaking = false;
         isPaused = true;
-        updatePlayerDock();
+        updateDockState();
       } else if (isPaused) {
         synth.resume();
         isSpeaking = true;
         isPaused = false;
-        updatePlayerDock();
+        updateDockState();
       } else {
-        playSentence(currentIndex);
+        playSentence(currentSentenceIdx);
       }
     }
 
-    function prevSentence() {
-      if (currentIndex > 0) {
-        playSentence(currentIndex - 1);
-      } else {
-        playSentence(0);
-      }
+    function playSpecificSentence(index) {
+      playSentence(index);
     }
 
-    function nextSentence() {
-      if (currentIndex + 1 < article.sentences.length) {
-        playSentence(currentIndex + 1);
+    function navSentence(delta) {
+      const nextIdx = currentSentenceIdx + delta;
+      if (currentDoc && nextIdx >= 0 && nextIdx < currentDoc.sentences.length) {
+        playSentence(nextIdx);
       }
     }
 
     function repeatCurrentSentence(times = 3) {
-      repeatSentenceTimes(currentIndex, times);
+      repeatSentenceTimes(currentSentenceIdx, times);
     }
 
     function repeatSentenceTimes(idx, times) {
+      if (!currentDoc || !synth) return;
       synth.cancel();
-      currentIndex = idx;
+      stopSpeechHeartbeat();
+      currentSentenceIdx = idx;
       let counter = 0;
 
-      function speakOnce() {
+      function speakNextIteration() {
         if (counter >= times) {
           isSpeaking = false;
-          render();
+          renderMainView();
           return;
         }
         counter++;
-        const utter = new SpeechSynthesisUtterance(article.sentences[idx]);
-        const voiceIdx = document.getElementById('voiceSelect').value;
-        if (englishVoices[voiceIdx]) utter.voice = englishVoices[voiceIdx];
-        utter.rate = parseFloat(document.getElementById('rateSlider').value);
-        utter.pitch = parseFloat(document.getElementById('pitchSlider').value);
-        utter.onstart = () => { isSpeaking = true; render(); };
-        utter.onend = () => { setTimeout(speakOnce, 400); };
+        const utter = new SpeechSynthesisUtterance(currentDoc.sentences[idx]);
+        const voiceIdx = document.getElementById('voicePicker').value;
+        if (availableVoices[voiceIdx]) utter.voice = availableVoices[voiceIdx];
+        utter.rate = parseFloat(document.getElementById('rateRange').value);
+        utter.pitch = parseFloat(document.getElementById('pitchRange').value);
+
+        utter.onstart = () => { isSpeaking = true; renderMainView(); };
+        utter.onend = () => { setTimeout(speakNextIteration, 450); };
+        utter.onerror = () => { isSpeaking = false; renderMainView(); };
         synth.speak(utter);
       }
 
-      speakOnce();
+      speakNextIteration();
     }
 
-    function onSentenceClick(idx) {
-      playSentence(idx);
-    }
-
-    function onWordClick(e, word) {
+    // --- Word Interactive Actions ---
+    function onWordClicked(e, word) {
       e.stopPropagation();
-      selectedWord = word.replace(/[^a-zA-Z'-]/g, '');
-      if (!selectedWord) return;
-
-      document.getElementById('wordModalTitle').textContent = `单词: ${selectedWord}`;
-      document.getElementById('wordModal').classList.add('show');
+      targetWord = word;
+      document.getElementById('wordSheetTitle').textContent = `单词: ${targetWord}`;
+      showModal('wordSheet');
     }
 
-    function executeWordRepeat(times) {
-      closeModals();
+    function triggerWordSpeech(times) {
+      hideModal('wordSheet');
+      if (!synth || !targetWord) return;
       synth.cancel();
       let count = 0;
 
       function speakWordOnce() {
         if (count >= times) return;
         count++;
-        const utter = new SpeechSynthesisUtterance(selectedWord);
-        const voiceIdx = document.getElementById('voiceSelect').value;
-        if (englishVoices[voiceIdx]) utter.voice = englishVoices[voiceIdx];
-        utter.rate = parseFloat(document.getElementById('rateSlider').value);
-        utter.pitch = parseFloat(document.getElementById('pitchSlider').value);
+        const utter = new SpeechSynthesisUtterance(targetWord);
+        const voiceIdx = document.getElementById('voicePicker').value;
+        if (availableVoices[voiceIdx]) utter.voice = availableVoices[voiceIdx];
+        utter.rate = parseFloat(document.getElementById('rateRange').value);
+        utter.pitch = parseFloat(document.getElementById('pitchRange').value);
         utter.onend = () => {
           if (count < times) setTimeout(speakWordOnce, 400);
         };
@@ -754,126 +990,192 @@
       speakWordOnce();
     }
 
-    function executeWordRepeatSlow() {
-      closeModals();
+    function triggerWordSpeechSlow() {
+      hideModal('wordSheet');
+      if (!synth || !targetWord) return;
       synth.cancel();
-      const utter = new SpeechSynthesisUtterance(selectedWord);
-      const voiceIdx = document.getElementById('voiceSelect').value;
-      if (englishVoices[voiceIdx]) utter.voice = englishVoices[voiceIdx];
-      utter.rate = 0.6; // slow
+      const utter = new SpeechSynthesisUtterance(targetWord);
+      const voiceIdx = document.getElementById('voicePicker').value;
+      if (availableVoices[voiceIdx]) utter.voice = availableVoices[voiceIdx];
+      utter.rate = 0.55; // slow for pronunciation clarity
+      utter.pitch = parseFloat(document.getElementById('pitchRange').value);
       synth.speak(utter);
     }
 
-    function setMode(mode) {
+    function setPlaybackMode(mode) {
       playbackMode = mode;
-      document.getElementById('modeContinuous').classList.toggle('active', mode === 'continuous');
-      document.getElementById('modeRepeatSentence').classList.toggle('active', mode === 'repeatSentence');
+      document.getElementById('btnModeCont').classList.toggle('active', mode === 'continuous');
+      document.getElementById('btnModeLoop').classList.toggle('active', mode === 'loopSentence');
     }
 
-    function updatePlayerDock() {
-      const btn = document.getElementById('btnPlayPause');
+    function updateDockState() {
+      const btn = document.getElementById('btnPlayMaster');
       btn.textContent = isSpeaking ? '⏸' : '▶';
-      document.getElementById('playerProgress').textContent = `第 ${currentIndex + 1} / ${article ? article.sentences.length : 1} 句`;
+      const total = currentDoc ? currentDoc.sentences.length : 1;
+      document.getElementById('dockCounter').textContent = `第 ${currentSentenceIdx + 1} / ${total} 句`;
     }
 
-    // Modal helpers
-    function openImportModal() { document.getElementById('importModal').classList.add('show'); }
-    function openSettingsModal() { document.getElementById('settingsModal').classList.add('show'); }
-    function closeModals() {
-      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+    // --- Modal Controls ---
+    function showModal(id) {
+      document.getElementById(id).classList.add('active');
     }
-    function closeModalsOnOverlay(e) {
-      if (e.target.classList.contains('modal-overlay')) closeModals();
+    function hideModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+    function onOverlayClick(e, id) {
+      if (e.target.id === id) hideModal(id);
     }
 
-    function updateRateLabel() {
-      document.getElementById('rateLabel').textContent = document.getElementById('rateSlider').value + 'x';
+    function updateRateDisplay() {
+      document.getElementById('rateValue').textContent = document.getElementById('rateRange').value + 'x';
     }
-    function updatePitchLabel() {
-      document.getElementById('pitchLabel').textContent = document.getElementById('pitchSlider').value + 'x';
+    function updatePitchDisplay() {
+      document.getElementById('pitchValue').textContent = document.getElementById('pitchRange').value + 'x';
     }
-    function onVoiceChange() {}
+    function onVoiceSelected() {}
 
-    // Import handlers
-    function handleFile(e) {
+    // --- Document & URL Loaders ---
+    function handleFileUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target.result;
-        article = {
-          title: file.name.replace(/\.[^/.]+$/, ""),
-          source: `本地文档: ${file.name}`,
-          sentences: splitSentences(text)
+      const filename = file.name;
+      const ext = filename.split('.').pop().toLowerCase();
+
+      // Read file based on type
+      if (ext === 'pdf') {
+        // Lightweight client-side text extractor for PDF
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          const buffer = ev.target.result;
+          const text = extractTextFromPDFBuffer(buffer);
+          if (text && text.trim().length > 30) {
+            setArticleDocument(filename.replace(/\.[^/.]+$/, ""), `本地 PDF: ${filename}`, text);
+          } else {
+            alert('该 PDF 似乎为扫描图片或加密文档，无法直接提取纯文本。建议使用系统截图或 OCR 复制英文后粘贴到「粘贴文本」框中。');
+          }
         };
-        currentIndex = 0;
-        closeModals();
-        render();
-      };
-      reader.readAsText(file);
-    }
-
-    async function loadUrl() {
-      const url = document.getElementById('urlInput').value.trim();
-      if (!url) return;
-
-      // Note: In client-side browser, direct fetch of external websites might encounter CORS.
-      // We provide a fallback instruction if CORS fails.
-      try {
-        const res = await fetch(url);
-        const html = await res.text();
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        // Extract paragraphs
-        const paragraphs = Array.from(doc.querySelectorAll('p')).map(p => p.textContent.trim()).filter(t => t.length > 20);
-        const cleanText = paragraphs.join('\n\n');
-
-        article = {
-          title: doc.title || "网页文章",
-          source: url,
-          sentences: splitSentences(cleanText)
+        reader.readAsArrayBuffer(file);
+      } else {
+        // Plain text, markdown, etc. (with UTF-8 / GBK encoding compatibility)
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          let content = ev.target.result;
+          setArticleDocument(filename.replace(/\.[^/.]+$/, ""), `本地文档: ${filename}`, content);
         };
-        currentIndex = 0;
-        closeModals();
-        render();
-      } catch (err) {
-        alert("由于浏览器的跨域保护限制 (CORS)，无法直接下载该网址。请在 Safari 中打开网页并复制正文，然后粘贴到下方的「粘贴文本」输入框中。");
+        reader.readAsText(file, "UTF-8");
       }
     }
 
-    function loadPastedText() {
-      const text = document.getElementById('pasteInput').value.trim();
-      if (!text) return;
-
-      article = {
-        title: "已导入英文文本",
-        source: "剪贴板粘贴",
-        sentences: splitSentences(text)
-      };
-      currentIndex = 0;
-      closeModals();
-      render();
+    // Lightweight pure-JS PDF stream text extraction (for non-scanned PDFs)
+    function extractTextFromPDFBuffer(arrayBuffer) {
+      const bytes = new Uint8Array(arrayBuffer);
+      let binaryStr = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binaryStr += String.fromCharCode(bytes[i]);
+      }
+      
+      let extracted = [];
+      // Look for text in BT ... ET blocks
+      const textBlockRegex = /BT([\s\S]*?)ET/g;
+      let match;
+      while ((match = textBlockRegex.exec(binaryStr)) !== null) {
+        const block = match[1];
+        // Match string literals inside parentheses (text)
+        const strRegex = /\(([^()]*)\)/g;
+        let strMatch;
+        while ((strMatch = strRegex.exec(block)) !== null) {
+          let line = strMatch[1].replace(/\\([()\\])/g, '$1');
+          if (line.trim().length > 0) {
+            extracted.push(line);
+          }
+        }
+      }
+      return extracted.join(' ');
     }
 
-    function loadDemoText() {
-      const sample = `Reading aloud is one of the most effective methods to master English pronunciation, rhythm, and intonation.
+    async function fetchArticleUrl() {
+      const urlInput = document.getElementById('webUrlInput').value.trim();
+      if (!urlInput) {
+        alert('请输入有效的网址');
+        return;
+      }
+
+      // Use free public reader proxy (Jina Reader / AllOrigins) to bypass CORS and extract clean markdown
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = "解析中...";
+      btn.disabled = true;
+
+      try {
+        // Strategy 1: Jina Reader API (formats clean article text directly from any web page)
+        const cleanUrl = urlInput.replace(/^https?:\/\//, '');
+        const jinaEndpoint = `https://r.jina.ai/https://${cleanUrl}`;
+        const res = await fetch(jinaEndpoint);
+        if (!res.ok) throw new Error('Proxy status: ' + res.status);
+        const mdText = await res.text();
+
+        // Extract title from markdown first line (# Title)
+        let title = "网页文章";
+        const titleMatch = mdText.match(/^#\s+(.+)$/m);
+        if (titleMatch) title = titleMatch[1];
+
+        // Clean out links and markdown noise
+        let cleaned = mdText
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [text](url) -> text
+          .replace(/[#*`_]/g, ' ')
+          .replace(/\n{3,}/g, '\n\n');
+
+        setArticleDocument(title, urlInput, cleaned);
+      } catch (err) {
+        console.warn('Jina proxy failed, falling back:', err);
+        alert('由于该目标网站的防爬虫或跨域限制，无法直接下载。请在手机浏览器中打开该文章，复制正文后粘贴到下方的「粘贴文本」框中即可立即朗读！');
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    function importRawText() {
+      const text = document.getElementById('rawTextInput').value.trim();
+      if (!text) {
+        alert('请先输入或粘贴文本');
+        return;
+      }
+      setArticleDocument("剪贴板英文短文", "手动输入 / 粘贴", text);
+    }
+
+    function setArticleDocument(title, source, text) {
+      const sentences = segmentTextIntoSentences(text);
+      if (sentences.length === 0) {
+        alert('未能提取到有效的英文字句，请检查内容。');
+        return;
+      }
+      currentDoc = {
+        title: title || "已导入文章",
+        source: source || "来源",
+        sentences: sentences
+      };
+      currentSentenceIdx = 0;
+      hideModal('importSheet');
+      if (synth) synth.cancel();
+      isSpeaking = false;
+      isPaused = false;
+      renderMainView();
+    }
+
+    function loadBuiltinSample() {
+      const sampleText = `Reading aloud is one of the most effective methods to master English pronunciation, rhythm, and intonation.
 When you listen to high-quality audio while reading along, your brain establishes direct connections between spoken sounds and written words.
 If you stumble upon an unfamiliar vocabulary word, you can simply tap on it to hear it repeated multiple times at a comfortable speed.
 Regular practice with native accents will dramatically boost your listening comprehension and speaking confidence.
-Enjoy your personalized English learning journey!`;
+Enjoy your personalized English learning journey on any mobile device!`;
 
-      article = {
-        title: "英语朗读与精听练习示例",
-        source: "系统官方精选文章",
-        sentences: splitSentences(sample)
-      };
-      currentIndex = 0;
-      closeModals();
-      render();
+      setArticleDocument("英语朗读精听示例短文", "系统官方精选", sampleText);
     }
 
     // Initial render
-    render();
+    renderMainView();
   </script>
 </body>
 </html>
