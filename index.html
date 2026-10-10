@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="英语朗读者">
+  <title>英语朗读与精听助手</title>
+  <style>
+    :root {
+      --primary: #007aff;
+      --bg: #f2f2f7;
+      --card-bg: #ffffff;
+      --text: #1c1c1e;
+      --secondary-text: #8e8e93;
+      --border: #e5e5ea;
+      --highlight: rgba(0, 122, 255, 0.14);
+      --word-highlight: #ffcc00;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --primary: #0a84ff;
+        --bg: #000000;
+        --card-bg: #1c1c1e;
+        --text: #f2f2f7;
+        --secondary-text: #8e8e93;
+        --border: #38383a;
+        --highlight: rgba(10, 132, 255, 0.22);
+        --word-highlight: #ffd60a;
+      }
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    /* Header */
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .header-btns {
+      display: flex;
+      gap: 12px;
+    }
+    .btn-icon {
+      background: none;
+      border: none;
+      font-size: 15px;
+      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 500;
+    }
+    /* Main Content */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+    /* Empty State */
+    .empty-state {
+      margin: auto;
+      text-align: center;
+      max-width: 360px;
+      padding: 24px;
+    }
+    .empty-state .icon {
+      font-size: 54px;
+      margin-bottom: 16px;
+    }
+    .empty-state h2 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    .empty-state p {
+      font-size: 14px;
+      color: var(--secondary-text);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    .action-btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-secondary {
+      background: var(--card-bg);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    /* Article Reader */
+    .article-header {
+      background: var(--card-bg);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .article-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .article-meta {
+      font-size: 12px;
+      color: var(--secondary-text);
+    }
+    .tip-box {
+      font-size: 13px;
+      color: var(--secondary-text);
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 10px 12px;
+      border-left: 3px solid var(--primary);
+    }
+    .sentence-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-bottom: 140px; /* Space for player */
+    }
+    .sentence-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 14px;
+      border: 1.5px solid transparent;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .sentence-card.active {
+      border-color: var(--primary);
+      background: var(--highlight);
+    }
+    .sentence-text {
+      font-size: 18px;
+      line-height: 1.6;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 6px;
+      margin-bottom: 10px;
+    }
+    .word-span {
+      padding: 2px 4px;
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .word-span:active {
+      background: var(--primary);
+      color: white;
+    }
+    .sentence-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--secondary-text);
+      border-top: 1px dashed var(--border);
+      padding-top: 8px;
+    }
+    .sentence-bar .actions {
+      display: flex;
+      gap: 12px;
+    }
+    .sentence-bar .action-link {
+      color: var(--primary);
+      font-weight: 500;
+      cursor: pointer;
+    }
+    /* Bottom Player */
+    .player-dock {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 100;
+    }
+    @media (prefers-color-scheme: dark) {
+      .player-dock {
+        background: rgba(28, 28, 30, 0.88);
+      }
+    }
+    .player-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--secondary-text);
+    }
+    .mode-pills {
+      display: flex;
+      background: rgba(120, 120, 128, 0.16);
+      border-radius: 8px;
+      padding: 2px;
+    }
+    .mode-pill {
+      border: none;
+      background: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .mode-pill.active {
+      background: var(--card-bg);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+      color: var(--primary);
+    }
+    .player-btns {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 28px;
+    }
+    .ctrl-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .ctrl-btn-play {
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+      background: var(--primary);
+      color: white;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Modals / Sheets */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      align-items: flex-end;
+      z-index: 200;
+    }
+    .modal-overlay.show {
+      display: flex;
+    }
+    .sheet-card {
+      background: var(--card-bg);
+      width: 100%;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 16px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .sheet-header h3 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--secondary-text);
+      margin-bottom: 8px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+    }
+    textarea.form-control {
+      resize: vertical;
+      min-height: 120px;
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .slider-row input[type="range"] {
+      flex: 1;
+    }
+    .slider-val {
+      font-weight: 600;
+      color: var(--primary);
+      min-width: 50px;
+      text-align: right;
+    }
+    /* Word Action Sheet */
+    .word-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .word-action-btn {
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>英语朗读者</h1>
+    <div class="header-btns">
+      <button class="btn-icon" onclick="openImportModal()">＋ 导入内容</button>
+      <button class="btn-icon" onclick="openSettingsModal()">⚙️ 设置</button>
+    </div>
+  </header>
+
+  <main id="mainContainer">
+    <!-- Rendered via JS -->
+  </main>
+
+  <div id="playerDock" class="player-dock" style="display: none;">
+    <div class="player-info-row">
+      <span id="playerProgress">第 1 / 1 句</span>
+      <div class="mode-pills">
+        <button class="mode-pill active" id="modeContinuous" onclick="setMode('continuous')">连续</button>
+        <button class="mode-pill" id="modeRepeatSentence" onclick="setMode('repeatSentence')">单句循环</button>
+      </div>
+    </div>
+    <div class="player-btns">
+      <button class="ctrl-btn" onclick="prevSentence()">⏮</button>
+      <button class="ctrl-btn ctrl-btn-play" id="btnPlayPause" onclick="togglePlayPause()">▶</button>
+      <button class="ctrl-btn" onclick="nextSentence()">⏭</button>
+      <button class="ctrl-btn" onclick="repeatCurrentSentence(3)" title="重复3次">🔁</button>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div id="importModal" class="modal-overlay" onclick="closeModalsOnOverlay(event)">
+    <div class="sheet-card">
+      <div class="sheet-header">
+        <h3>导入阅读内容</h3>
+        <button class="btn-icon" onclick="closeModals()">关闭</button>
+      </div>
+      <div class="action-btn-group">
+        <input type="file" id="fileInput" accept=".txt,.pdf,.md" style="display: none;" onchange="handleFile(event)">
+        <button class="btn-primary" onclick="document.getElementById('fileInput').click()">📄 上传文档 (TXT / PDF / MD)</button>
+        
+        <div class="form-group" style="margin-top: 14px;">
+          <label>或 输入外刊 / 网页网址 (URL):</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="url" id="urlInput" class="form-control" placeholder="https://...">
+            <button class="btn-primary" style="padding: 10px 18px;" onclick="loadUrl()">抓取</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>或 直接粘贴英文文本:</label>
+          <textarea id="pasteInput" class="form-control" placeholder="在此粘贴英文短文..."></textarea>
+          <button class="btn-secondary" style="margin-top: 8px; width: 100%;" onclick="loadPastedText()">导入粘贴的文本</button>
+        </div>
+
+        <button class="btn-icon" style="justify-content: center; margin-top: 8px;" onclick="loadDemoText()">加载官方示例文章试听</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal-overlay" onclick="closeModalsOnOverlay(event)">
+    <div class="sheet-card">
+      <div class="sheet-header">
+        <h3>朗读与发音设置</h3>
+        <button class="btn-icon" onclick="closeModals()">完成</button>
+      </div>
+
+      <div class="form-group">
+        <label>选择发音人音色 (Voice):</label>
+        <select id="voiceSelect" class="form-control" onchange="onVoiceChange()"></select>
+        <p style="font-size: 12px; color: var(--secondary-text); margin-top: 6px;">
+          💡 提示：在 iPhone「设置 -> 辅助功能 -> 朗读内容 -> 声音」中可免费下载高品质（Enhanced / Premium）英语语音包，效果极佳。
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label>朗读语速 (Speech Rate):</label>
+        <div class="slider-row">
+          <input type="range" id="rateSlider" min="0.5" max="1.5" step="0.05" value="0.9" oninput="updateRateLabel()">
+          <span class="slider-val" id="rateLabel">0.9x</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>声调音高 (Pitch):</label>
+        <div class="slider-row">
+          <input type="range" id="pitchSlider" min="0.75" max="1.25" step="0.05" value="1.0" oninput="updatePitchLabel()">
+          <span class="slider-val" id="pitchLabel">1.0x</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>点击单词默认重复朗读次数:</label>
+        <select id="wordRepeatTimes" class="form-control">
+          <option value="1">1 次</option>
+          <option value="2">2 次</option>
+          <option value="3" selected>3 次 (推荐精听)</option>
+          <option value="5">5 次</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Word Action Modal -->
+  <div id="wordModal" class="modal-overlay" onclick="closeModalsOnOverlay(event)">
+    <div class="sheet-card">
+      <div class="sheet-header">
+        <h3 id="wordModalTitle">单词操作</h3>
+        <button class="btn-icon" onclick="closeModals()">取消</button>
+      </div>
+      <div class="word-actions">
+        <button class="word-action-btn" onclick="executeWordRepeat(1)">🔊 朗读 1 次</button>
+        <button class="word-action-btn" onclick="executeWordRepeat(3)">🔁 重复朗读 3 次</button>
+        <button class="word-action-btn" onclick="executeWordRepeatSlow()">🐢 慢速发音 (0.6x) 重读</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let article = null; // { title, source, sentences: [] }
+    let currentIndex = 0;
+    let isSpeaking = false;
+    let isPaused = false;
+    let playbackMode = 'continuous'; // 'continuous' | 'repeatSentence'
+    let selectedWord = '';
+    let englishVoices = [];
+
+    // Synthesizer
+    const synth = window.speechSynthesis;
+
+    function initVoices() {
+      if (!synth) return;
+      const voices = synth.getVoices();
+      englishVoices = voices.filter(v => v.lang.startsWith('en'));
+      
+      const select = document.getElementById('voiceSelect');
+      select.innerHTML = '';
+
+      if (englishVoices.length === 0) {
+        const opt = document.createElement('option');
+        opt.textContent = "默认英语发音 (Default English)";
+        select.appendChild(opt);
+        return;
+      }
+
+      englishVoices.forEach((voice, index) => {
+        const opt = document.createElement('option');
+        opt.value = index;
+        let label = voice.name;
+        if (voice.lang === 'en-US') label += ' (🇺🇸 美式)';
+        else if (voice.lang === 'en-GB') label += ' (🇬🇧 英式)';
+        else if (voice.lang === 'en-AU') label += ' (🇦🇺 澳式)';
+        opt.textContent = label;
+        select.appendChild(opt);
+      });
+    }
+
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = initVoices;
+    }
+    initVoices();
+
+    // Sentence splitting
+    function splitSentences(text) {
+      // Split by sentence terminators keeping punctuation
+      const regex = /([^.!?\n]+[.!?]+|[^
+]+)/g;
+      const matches = text.match(regex) || [];
+      return matches.map(s => s.trim()).filter(s => s.length > 2);
+    }
+
+    // Render UI
+    function render() {
+      const container = document.getElementById('mainContainer');
+      const dock = document.getElementById('playerDock');
+
+      if (!article || article.sentences.length === 0) {
+        dock.style.display = 'none';
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">🎧</div>
+            <h2>开始英语跟读与精听</h2>
+            <p>上传本地 PDF/TXT 文档，或粘贴外刊网址与文章。<br>点击任意句子或单词，可随时精准重复发音。</p>
+            <div class="action-btn-group">
+              <button class="btn-primary" onclick="openImportModal()">📥 导入文章内容</button>
+              <button class="btn-secondary" onclick="loadDemoText()">加载官方示例文章试听</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      dock.style.display = 'flex';
+      updatePlayerDock();
+
+      let html = `
+        <div class="article-header">
+          <div class="article-title">${escapeHtml(article.title)}</div>
+          <div class="article-meta">${escapeHtml(article.source)} · 共 ${article.sentences.length} 句</div>
+        </div>
+        <div class="tip-box">
+          💡 点击任意句子立即朗读；轻触某个单词可弹出单独重读。
+        </div>
+        <div class="sentence-list">
+      `;
+
+      article.sentences.forEach((sentence, idx) => {
+        const isActive = idx === currentIndex && (isSpeaking || isPaused);
+        const words = sentence.split(/\s+/);
+        const wordSpans = words.map(w => `<span class="word-span" onclick="onWordClick(event, '${escapeHtml(w)}')">${escapeHtml(w)}</span>`).join(' ');
+
+        html += `
+          <div class="sentence-card ${isActive ? 'active' : ''}" id="sentence-${idx}" onclick="onSentenceClick(${idx})">
+            <div class="sentence-text">${wordSpans}</div>
+            <div class="sentence-bar">
+              <span>第 ${idx + 1} 句</span>
+              <div class="actions">
+                <span class="action-link" onclick="event.stopPropagation(); playSentence(${idx})">${isActive && isSpeaking ? '🔊 播放中' : '▶ 播放本句'}</span>
+                <span class="action-link" onclick="event.stopPropagation(); repeatSentenceTimes(${idx}, 3)">🔁 重读3次</span>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+      container.innerHTML = html;
+
+      // Scroll active into view
+      const activeEl = document.getElementById(`sentence-${currentIndex}`);
+      if (activeEl && (isSpeaking || isPaused)) {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Playback Logic
+    function playSentence(index) {
+      if (!article || index < 0 || index >= article.sentences.length) return;
+      synth.cancel();
+
+      currentIndex = index;
+      const text = article.sentences[index];
+      const utter = new SpeechSynthesisUtterance(text);
+
+      // Voice
+      const voiceIdx = document.getElementById('voiceSelect').value;
+      if (englishVoices[voiceIdx]) {
+        utter.voice = englishVoices[voiceIdx];
+      }
+      utter.rate = parseFloat(document.getElementById('rateSlider').value);
+      utter.pitch = parseFloat(document.getElementById('pitchSlider').value);
+
+      utter.onstart = () => {
+        isSpeaking = true;
+        isPaused = false;
+        render();
+      };
+
+      utter.onend = () => {
+        isSpeaking = false;
+        if (playbackMode === 'repeatSentence') {
+          playSentence(currentIndex);
+        } else if (playbackMode === 'continuous') {
+          if (currentIndex + 1 < article.sentences.length) {
+            playSentence(currentIndex + 1);
+          } else {
+            render();
+          }
+        } else {
+          render();
+        }
+      };
+
+      utter.onerror = () => {
+        isSpeaking = false;
+        render();
+      };
+
+      synth.speak(utter);
+    }
+
+    function togglePlayPause() {
+      if (isSpeaking) {
+        synth.pause();
+        isSpeaking = false;
+        isPaused = true;
+        updatePlayerDock();
+      } else if (isPaused) {
+        synth.resume();
+        isSpeaking = true;
+        isPaused = false;
+        updatePlayerDock();
+      } else {
+        playSentence(currentIndex);
+      }
+    }
+
+    function prevSentence() {
+      if (currentIndex > 0) {
+        playSentence(currentIndex - 1);
+      } else {
+        playSentence(0);
+      }
+    }
+
+    function nextSentence() {
+      if (currentIndex + 1 < article.sentences.length) {
+        playSentence(currentIndex + 1);
+      }
+    }
+
+    function repeatCurrentSentence(times = 3) {
+      repeatSentenceTimes(currentIndex, times);
+    }
+
+    function repeatSentenceTimes(idx, times) {
+      synth.cancel();
+      currentIndex = idx;
+      let counter = 0;
+
+      function speakOnce() {
+        if (counter >= times) {
+          isSpeaking = false;
+          render();
+          return;
+        }
+        counter++;
+        const utter = new SpeechSynthesisUtterance(article.sentences[idx]);
+        const voiceIdx = document.getElementById('voiceSelect').value;
+        if (englishVoices[voiceIdx]) utter.voice = englishVoices[voiceIdx];
+        utter.rate = parseFloat(document.getElementById('rateSlider').value);
+        utter.pitch = parseFloat(document.getElementById('pitchSlider').value);
+        utter.onstart = () => { isSpeaking = true; render(); };
+        utter.onend = () => { setTimeout(speakOnce, 400); };
+        synth.speak(utter);
+      }
+
+      speakOnce();
+    }
+
+    function onSentenceClick(idx) {
+      playSentence(idx);
+    }
+
+    function onWordClick(e, word) {
+      e.stopPropagation();
+      selectedWord = word.replace(/[^a-zA-Z'-]/g, '');
+      if (!selectedWord) return;
+
+      document.getElementById('wordModalTitle').textContent = `单词: ${selectedWord}`;
+      document.getElementById('wordModal').classList.add('show');
+    }
+
+    function executeWordRepeat(times) {
+      closeModals();
+      synth.cancel();
+      let count = 0;
+
+      function speakWordOnce() {
+        if (count >= times) return;
+        count++;
+        const utter = new SpeechSynthesisUtterance(selectedWord);
+        const voiceIdx = document.getElementById('voiceSelect').value;
+        if (englishVoices[voiceIdx]) utter.voice = englishVoices[voiceIdx];
+        utter.rate = parseFloat(document.getElementById('rateSlider').value);
+        utter.pitch = parseFloat(document.getElementById('pitchSlider').value);
+        utter.onend = () => {
+          if (count < times) setTimeout(speakWordOnce, 400);
+        };
+        synth.speak(utter);
+      }
+
+      speakWordOnce();
+    }
+
+    function executeWordRepeatSlow() {
+      closeModals();
+      synth.cancel();
+      const utter = new SpeechSynthesisUtterance(selectedWord);
+      const voiceIdx = document.getElementById('voiceSelect').value;
+      if (englishVoices[voiceIdx]) utter.voice = englishVoices[voiceIdx];
+      utter.rate = 0.6; // slow
+      synth.speak(utter);
+    }
+
+    function setMode(mode) {
+      playbackMode = mode;
+      document.getElementById('modeContinuous').classList.toggle('active', mode === 'continuous');
+      document.getElementById('modeRepeatSentence').classList.toggle('active', mode === 'repeatSentence');
+    }
+
+    function updatePlayerDock() {
+      const btn = document.getElementById('btnPlayPause');
+      btn.textContent = isSpeaking ? '⏸' : '▶';
+      document.getElementById('playerProgress').textContent = `第 ${currentIndex + 1} / ${article ? article.sentences.length : 1} 句`;
+    }
+
+    // Modal helpers
+    function openImportModal() { document.getElementById('importModal').classList.add('show'); }
+    function openSettingsModal() { document.getElementById('settingsModal').classList.add('show'); }
+    function closeModals() {
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+    }
+    function closeModalsOnOverlay(e) {
+      if (e.target.classList.contains('modal-overlay')) closeModals();
+    }
+
+    function updateRateLabel() {
+      document.getElementById('rateLabel').textContent = document.getElementById('rateSlider').value + 'x';
+    }
+    function updatePitchLabel() {
+      document.getElementById('pitchLabel').textContent = document.getElementById('pitchSlider').value + 'x';
+    }
+    function onVoiceChange() {}
+
+    // Import handlers
+    function handleFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target.result;
+        article = {
+          title: file.name.replace(/\.[^/.]+$/, ""),
+          source: `本地文档: ${file.name}`,
+          sentences: splitSentences(text)
+        };
+        currentIndex = 0;
+        closeModals();
+        render();
+      };
+      reader.readAsText(file);
+    }
+
+    async function loadUrl() {
+      const url = document.getElementById('urlInput').value.trim();
+      if (!url) return;
+
+      // Note: In client-side browser, direct fetch of external websites might encounter CORS.
+      // We provide a fallback instruction if CORS fails.
+      try {
+        const res = await fetch(url);
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        // Extract paragraphs
+        const paragraphs = Array.from(doc.querySelectorAll('p')).map(p => p.textContent.trim()).filter(t => t.length > 20);
+        const cleanText = paragraphs.join('\n\n');
+
+        article = {
+          title: doc.title || "网页文章",
+          source: url,
+          sentences: splitSentences(cleanText)
+        };
+        currentIndex = 0;
+        closeModals();
+        render();
+      } catch (err) {
+        alert("由于浏览器的跨域保护限制 (CORS)，无法直接下载该网址。请在 Safari 中打开网页并复制正文，然后粘贴到下方的「粘贴文本」输入框中。");
+      }
+    }
+
+    function loadPastedText() {
+      const text = document.getElementById('pasteInput').value.trim();
+      if (!text) return;
+
+      article = {
+        title: "已导入英文文本",
+        source: "剪贴板粘贴",
+        sentences: splitSentences(text)
+      };
+      currentIndex = 0;
+      closeModals();
+      render();
+    }
+
+    function loadDemoText() {
+      const sample = `Reading aloud is one of the most effective methods to master English pronunciation, rhythm, and intonation.
+When you listen to high-quality audio while reading along, your brain establishes direct connections between spoken sounds and written words.
+If you stumble upon an unfamiliar vocabulary word, you can simply tap on it to hear it repeated multiple times at a comfortable speed.
+Regular practice with native accents will dramatically boost your listening comprehension and speaking confidence.
+Enjoy your personalized English learning journey!`;
+
+      article = {
+        title: "英语朗读与精听练习示例",
+        source: "系统官方精选文章",
+        sentences: splitSentences(sample)
+      };
+      currentIndex = 0;
+      closeModals();
+      render();
+    }
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
